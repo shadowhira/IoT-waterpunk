@@ -1,0 +1,203 @@
+/* From Uiverse.io by Tsiangana */
+.radio-inputs {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    max-width: 350px;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+.radio-inputs>* {
+    margin: 18px;
+    
+}
+
+.on:checked+.radio-tile {
+    border-color: var(--ON_TOGGLE);
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
+    color: var(--ON_TOGGLE);
+}
+
+.on:checked+.radio-tile:before {
+    transform: scale(1);
+    opacity: 1;
+    background-color: var(--ON_TOGGLE);
+    border-color: var(--ON_TOGGLE);
+}
+
+.on:checked+.radio-tile .radio-icon span{
+    color: #fff;
+    -webkit-text-stroke: 0.5px black; /* Độ dày và màu viền */
+}
+
+.on:checked+.radio-tile .radio-label {
+    color: var(--ON_TOGGLE);
+}
+
+.on:focus+.radio-tile {
+    background-color: var(--ON_TOGGLE);
+    border-color: #fff;
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1), 0 0 0 4px #b5c9fc;
+}
+
+.on:checked+.radio-tile {
+    background-color: var(--ON_TOGGLE);
+    border-color: #fff;
+}
+
+.on:focus+.radio-tile:before {
+    transform: scale(1);
+    opacity: 1;
+}
+
+/*  off */
+.off:checked+.radio-tile {
+    border-color: var(--OFF_TOGGLE);
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
+    color: var(--OFF_TOGGLE);
+}
+
+.off:checked+.radio-tile:before {
+    transform: scale(1);
+    opacity: 1;
+    background-color: var(--OFF_TOGGLE);
+    border-color: var(--OFF_TOGGLE);
+}
+
+.off:checked+.radio-tile .radio-icon span{
+    color: #fff;
+    -webkit-text-stroke: 0.5px black; /* Độ dày và màu viền */
+}
+
+.off:checked+.radio-tile .radio-label {
+    color: var(--OFF_TOGGLE);
+}
+
+.off:focus+.radio-tile {
+    background-color: var(--OFF_TOGGLE);
+    border-color: #fff;
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1), 0 0 0 4px #b5c9fc;
+}
+
+.off:checked+.radio-tile {
+    background-color: var(--OFF_TOGGLE);
+    border-color: #fff;
+}
+
+.off:focus+.radio-tile:before {
+    transform: scale(1);
+    opacity: 1;
+}
+
+/* auto */
+.auto:checked+.radio-tile {
+    border-color: var(--AUTO_TOGGLE);
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
+    color: var(--AUTO_TOGGLE);
+}
+
+.auto:checked+.radio-tile:before {
+    transform: scale(1);
+    opacity: 1;
+    background-color: var(--AUTO_TOGGLE);
+    border-color: var(--AUTO_TOGGLE);
+}
+
+.auto:checked+.radio-tile .radio-icon span{
+    color: #fff;
+    -webkit-text-stroke: 0.5px black; /* Độ dày và màu viền */
+}
+
+.auto:checked+.radio-tile .radio-label {
+    color: var(--AUTO_TOGGLE);
+}
+
+.auto:focus+.radio-tile {
+    background-color: var(--AUTO_TOGGLE);
+    border-color: #fff;
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1), 0 0 0 4px #b5c9fc;
+}
+
+.auto:checked+.radio-tile {
+    background-color: var(--AUTO_TOGGLE);
+    border-color: #fff;
+}
+
+.auto:focus+.radio-tile:before {
+    transform: scale(1);
+    opacity: 1;
+}
+
+.radio-tile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 80px;
+    min-height: 80px;
+    border-radius: 50%;
+    border: 2px solid #b5bfd9;
+    background-color: #fff;
+    box-shadow: rgba(0, 0, 0, 0.25) 0px 25px 50px -12px;
+    transition: 0.15s ease;
+    cursor: pointer;
+    position: relative;
+    padding: 16px;
+}
+
+.on:hover {
+    border-color: var(--ON_TOGGLE);
+}
+
+.off:hover {
+    border-color: var(--OFF_TOGGLE);
+}
+
+.auto:hover {
+    border-color: var(--AUTO_TOGGLE);
+}
+
+.radio-tile:hover:before {
+    transform: scale(1);
+    opacity: 1;
+}
+
+.radio-icon span{
+    font-size: 24px;
+    font-weight: bold;
+    color: #666
+}
+
+.on {
+    fill: var(--ON_TOGGLE);
+}
+
+.off {
+    fill: var(--OFF_TOGGLE);
+}
+
+.auto {
+    fill: var(--AUTO_TOGGLE);
+}
+
+.radio-label {
+    color: #707070;
+    transition: 0.375s ease;
+    text-align: center;
+    font-size: 13px;
+}
+
+.radio-input {
+    clip: rect(0 0 0 0);
+    -webkit-clip-path: inset(100%);
+    clip-path: inset(100%);
+    height: 1px;
+    overflow: hidden;
+    position: absolute;
+    white-space: nowrap;
+    width: 1px;
+}

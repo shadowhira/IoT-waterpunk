@@ -1,0 +1,16 @@
+POST http://localhost:4000/api/v1/billing/create_payment_url
+Content-Type: application/json
+
+{
+  "billing_period": {
+    "start": "2024-11-01T00:00:00Z",
+    "end": "2024-11-30T23:59:59Z"
+  },
+  "amount_due": 500000,
+  "bankCode": "",
+  "order": {
+    "note": "Thanh toán hóa đơn tháng 11"
+  },
+  "orderType": "bill payment",
+  "language": "vn"
+}

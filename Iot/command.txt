@@ -1,0 +1,44 @@
+# check process running
+netstat -ano | findstr :2403
+taskkill /PID 5360 /F
+
+# run in 2403
+./mosquitto -c myConfig.conf
+
+
+# run in 1883
+./mosquitto -v
+
+cd E:\Code\Unemployment\week46 [Iot]\Iot
+cd C:\Program Files\mosquitto
+
+
+################### Macos
+# check running
+ps aux | grep mosquitto
+
+# run
+brew services start mosquitto
+
+# chạy ở cổng mặc định 1883
+mosquitto -v (cần thêm vào path nếu chưa có: echo 'export PATH="/usr/local/opt/mosquitto/sbin:$PATH"' >> ~/.zshrc
+source ~/.zshrc)
+/usr/local/opt/mosquitto/sbin/mosquitto -v (hoặc chạy thẳng)
+
+# chạy theo config
+mosquitto -c myConfig.conf
+
+# kiểm tra đang chjay và dừng port
+lsof -i :2403 (hoặc 1883 - default)
+kill -9 <PID>
+
+# chuyển sang cổng khác: 
+cd /usr/local/etc/mosquitto/mosquitto.conf  
+sudo nano /usr/local/etc/mosquitto/mosquitto.conf
+Thêm đoạn:
+listener 2403 (ví dụ cổng 2403)
+allow_anonymous true
+Rồi control X -> Y (yes) -> Enter
+
+brew services restart mosquitto
+

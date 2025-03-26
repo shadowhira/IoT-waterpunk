@@ -1,0 +1,14 @@
+:root {
+    --THEME_COLOR_BACKGROUND : #3333CC;
+    --THEME_COLOR_FONT : #fff;
+    --THEME_COLOR_BORDER : #33FFFF;
+    --COLOR_CONTENT_ADMIN : #ffc000;
+    --ON_TOGGLE : #00FF66;
+    --OFF_TOGGLE : #FF3333;
+    --AUTO_TOGGLE : #0099FF;
+    --COLOR_POOL : #000080;
+    --HEIGHT_POOL : 400px;
+    --WIDTH_POOL : 300px;
+    --WIDTH_LID : 100px;
+    --HEIGHT_LID : 25px;
+}
