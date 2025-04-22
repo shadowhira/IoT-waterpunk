@@ -29,11 +29,55 @@ const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 
 // Lắng nghe kết nối WebSocket
-wss.on("connection", (ws) => {
+wss.on("connection", async (ws) => {
   console.log("A user connected");
 
-  // Gửi thông điệp chào mừng
-  ws.send(JSON.stringify({ message: "Welcome to WebSocket server!" }));
+  try {
+    // Gửi thông điệp chào mừng
+    ws.send(JSON.stringify({ message: "Welcome to WebSocket server!" }));
+
+    // Gửi trạng thái cảnh báo rò rỉ hiện tại
+    const alertService = require('./services/alert.service');
+    const activeAlerts = await alertService.getActiveAlerts();
+
+    // Tìm cảnh báo rò rỉ đang hoạt động
+    const leakAlert = activeAlerts.find(alert => alert.leak_type > 0);
+
+    if (leakAlert) {
+      // Nếu có cảnh báo rò rỉ đang hoạt động
+      ws.send(JSON.stringify({
+        topic: 'leak',
+        payload: {
+          detected: true,
+          type: leakAlert.leak_type,
+          timestamp: leakAlert.createdAt,
+          details: leakAlert
+        }
+      }));
+    } else {
+      // Nếu không có cảnh báo rò rỉ
+      ws.send(JSON.stringify({
+        topic: 'leak',
+        payload: {
+          detected: false,
+          type: 0,
+          timestamp: null,
+          details: null
+        }
+      }));
+    }
+
+    // Gửi cấu hình hệ thống hiện tại
+    const systemService = require('./services/system.service');
+    const config = await systemService.getConfig();
+
+    ws.send(JSON.stringify({
+      topic: 'config',
+      payload: config
+    }));
+  } catch (error) {
+    console.error('Lỗi khi gửi dữ liệu ban đầu:', error);
+  }
 
   // Lắng nghe tin nhắn từ client
   ws.on("message", (message) => {

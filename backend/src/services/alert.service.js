@@ -84,8 +84,8 @@ class alertService {
       });
     }
 
-    // Gửi lệnh reset cảnh báo rò rỉ qua MQTT
-    if (alert.leak_type > 0 && global.client) {
+    // Gửi lệnh reset cảnh báo rò rỉ qua MQTT (chỉ khi được gọi từ frontend)
+    if (alert.leak_type > 0 && global.client && !global._isResettingLeak) {
       global.client.publish(
         "/sensor/control",
         "reset_leak",
@@ -141,17 +141,44 @@ class alertService {
           value: data.value
         });
       } else if (data.type === 'leak_reset') {
-        // Đặt lại tất cả cảnh báo rò rỉ đang hoạt động
-        const activeLeakAlerts = await Alert.find({
-          is_active: true,
-          leak_type: { $gt: 0 }
-        });
+        try {
+          // Đánh dấu đang trong quá trình reset để tránh vòng lặp
+          global._isResettingLeak = true;
 
-        for (const alert of activeLeakAlerts) {
-          await this.resolveAlert(alert._id);
+          // Đặt lại tất cả cảnh báo rò rỉ đang hoạt động
+          const activeLeakAlerts = await Alert.find({
+            is_active: true,
+            leak_type: { $gt: 0 }
+          });
+
+          console.log(`Đang đặt lại ${activeLeakAlerts.length} cảnh báo rò rỉ`);
+
+          for (const alert of activeLeakAlerts) {
+            await this.resolveAlert(alert._id);
+          }
+
+          // Gửi thông báo qua WebSocket
+          if (global.wss) {
+            global.wss.clients.forEach((client) => {
+              if (client.readyState === 1) { // WebSocket.OPEN
+                client.send(JSON.stringify({
+                  topic: 'leak',
+                  payload: {
+                    detected: false,
+                    type: 0,
+                    timestamp: new Date().toISOString(),
+                    details: null
+                  }
+                }));
+              }
+            });
+          }
+
+          return { message: 'All leak alerts resolved', count: activeLeakAlerts.length };
+        } finally {
+          // Đặt lại cờ đánh dấu
+          global._isResettingLeak = false;
         }
-
-        return { message: 'All leak alerts resolved' };
       }
     } catch (error) {
       console.error("Error handling leak alert:", error);

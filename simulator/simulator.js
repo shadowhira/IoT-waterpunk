@@ -347,6 +347,11 @@ function showMenu() {
   console.log('7. Mô phỏng bơm quá lâu');
   console.log('8. Hiển thị trạng thái hiện tại');
   console.log('9. Hiển thị cấu hình hiện tại');
+  console.log('------ Điều khiển máy bơm ------');
+  console.log('10. BẬT máy bơm (chế độ thủ công)');
+  console.log('11. TẮT máy bơm (chế độ thủ công)');
+  console.log('12. Chế độ TỰ ĐỘNG');
+  console.log('13. Đặt lại cảnh báo rò rỉ');
   console.log('0. Thoát');
   console.log('===============================');
 
@@ -407,6 +412,22 @@ function handleMenuOption(option) {
       console.log('Cấu hình hiện tại:', systemConfig);
       showMenu();
       break;
+    case '10': // BẬT máy bơm
+      turnPumpOn();
+      showMenu();
+      break;
+    case '11': // TẮT máy bơm
+      turnPumpOff();
+      showMenu();
+      break;
+    case '12': // Chế độ TỰ ĐỘNG
+      setAutomaticMode();
+      showMenu();
+      break;
+    case '13': // Đặt lại cảnh báo rò rỉ
+      resetLeakAlert();
+      showMenu();
+      break;
     case '0':
       console.log('Đang thoát...');
       client.end();
@@ -422,19 +443,49 @@ function handleMenuOption(option) {
 function simulateWaterLevelLeak() {
   // Tăng khoảng cách (giảm mực nước) để mô phỏng rò rỉ
   const oldDistance = systemState.distance;
-  systemState.distance += systemConfig.leak_threshold * 2; // Tăng khoảng cách nhiều hơn ngưỡng
+  const distanceChange = systemConfig.leak_threshold * 2; // Tăng khoảng cách nhiều hơn ngưỡng
+  systemState.distance += distanceChange;
 
-  console.log(`Mô phỏng rò rỉ mực nước: ${oldDistance} cm -> ${systemState.distance} cm`);
+  // Cập nhật trạng thái rò rỉ
+  systemState.leakDetected = 1;
+  systemState.leakType = 1;
+
+  // Gửi cảnh báo ngay lập tức
+  const alertMsg = {
+    type: 'leak',
+    source: 'water_level',
+    value: distanceChange
+  };
+  client.publish(MQTT_TOPICS.leakAlert, JSON.stringify(alertMsg));
+
+  console.log(`\nMô phỏng rò rỉ mực nước: ${oldDistance} cm -> ${systemState.distance} cm`);
+  console.log('CẢNH BÁO: Phát hiện rò rỉ mực nước!');
 }
 
 // Mô phỏng rò rỉ lưu lượng
 function simulateFlowRateLeak() {
   // Tăng lưu lượng khi máy bơm tắt để mô phỏng rò rỉ
   if (systemState.pumpState === 0) {
-    systemState.flowRate = systemConfig.flow_threshold * 2; // Lưu lượng cao hơn ngưỡng
-    console.log(`Mô phỏng rò rỉ lưu lượng: Lưu lượng = ${systemState.flowRate} L/phút khi máy bơm tắt`);
+    const newFlowRate = systemConfig.flow_threshold * 2; // Lưu lượng cao hơn ngưỡng
+    systemState.flowRate = newFlowRate;
+
+    // Cập nhật trạng thái rò rỉ
+    systemState.leakDetected = 1;
+    systemState.leakType = 2;
+
+    // Gửi cảnh báo ngay lập tức
+    const alertMsg = {
+      type: 'leak',
+      source: 'flow_rate',
+      value: newFlowRate
+    };
+    client.publish(MQTT_TOPICS.leakAlert, JSON.stringify(alertMsg));
+
+    console.log(`\nMô phỏng rò rỉ lưu lượng: Lưu lượng = ${systemState.flowRate} L/phút khi máy bơm tắt`);
+    console.log('CẢNH BÁO: Phát hiện rò rỉ lưu lượng!');
   } else {
-    console.log('Không thể mô phỏng rò rỉ lưu lượng khi máy bơm đang bật!');
+    console.log('\nKhông thể mô phỏng rò rỉ lưu lượng khi máy bơm đang bật!');
+    console.log('Tắt máy bơm trước (chọn tùy chọn 11)');
   }
 }
 
@@ -443,10 +494,29 @@ function simulatePumpTimeout() {
   if (systemState.pumpState === 1) {
     // Đặt thời gian bắt đầu bơm về quá khứ để vượt quá thời gian tối đa
     systemState.pumpStartTime = Date.now() - (systemConfig.pump_timeout * 1000 + 1000);
-    console.log(`Mô phỏng bơm quá lâu: Thời gian bơm > ${systemConfig.pump_timeout} giây`);
+
+    // Cập nhật trạng thái rò rỉ
+    systemState.leakDetected = 1;
+    systemState.leakType = 3;
+
+    // Gửi cảnh báo ngay lập tức
+    const alertMsg = {
+      type: 'leak',
+      source: 'pump_timeout',
+      value: systemConfig.pump_timeout
+    };
+    client.publish(MQTT_TOPICS.leakAlert, JSON.stringify(alertMsg));
+
+    console.log(`\nMô phỏng bơm quá lâu: Thời gian bơm > ${systemConfig.pump_timeout} giây`);
+    console.log('CẢNH BÁO: Máy bơm hoạt động quá lâu!');
+
+    // Tắt máy bơm
+    systemState.pumpState = 0;
+    systemState.pumpStartTime = 0;
+    console.log('Máy bơm đã tự động TẮT do hoạt động quá lâu');
   } else {
-    console.log('Không thể mô phỏng bơm quá lâu khi máy bơm đang tắt!');
-    console.log('Bật máy bơm trước (chọn tùy chọn "on" từ backend)');
+    console.log('\nKhông thể mô phỏng bơm quá lâu khi máy bơm đang tắt!');
+    console.log('Bật máy bơm trước (chọn tùy chọn 10)');
   }
 }
 
@@ -464,6 +534,66 @@ function getLeakTypeName(leakType) {
       return 'Rò rỉ lưu lượng';
     case 3:
       return 'Bơm quá lâu';
+    default:
+      return 'Không xác định';
+  }
+}
+
+// BẬT máy bơm (chế độ thủ công)
+function turnPumpOn() {
+  systemState.pumpState = 1;
+  systemState.controlMode = 1;
+  systemState.pumpStartTime = Date.now();
+  console.log('\nĐã BẬT máy bơm (chế độ thủ công)');
+  console.log('Trạng thái máy bơm: ' + (systemState.pumpState ? 'BẬT' : 'TẮT'));
+  console.log('Chế độ điều khiển: ' + getControlModeName(systemState.controlMode));
+}
+
+// TẮT máy bơm (chế độ thủ công)
+function turnPumpOff() {
+  systemState.pumpState = 0;
+  systemState.controlMode = 0;
+  systemState.pumpStartTime = 0;
+  console.log('\nĐã TẮT máy bơm (chế độ thủ công)');
+  console.log('Trạng thái máy bơm: ' + (systemState.pumpState ? 'BẬT' : 'TẮT'));
+  console.log('Chế độ điều khiển: ' + getControlModeName(systemState.controlMode));
+}
+
+// Chế độ TỰ ĐỘNG
+function setAutomaticMode() {
+  systemState.controlMode = 2;
+  console.log('\nĐã chuyển sang chế độ TỰ ĐỘNG');
+  console.log('Trạng thái máy bơm: ' + (systemState.pumpState ? 'BẬT' : 'TẮT'));
+  console.log('Chế độ điều khiển: ' + getControlModeName(systemState.controlMode));
+}
+
+// Đặt lại cảnh báo rò rỉ
+function resetLeakAlert() {
+  if (systemState.leakDetected) {
+    systemState.leakDetected = 0;
+    systemState.leakType = 0;
+    console.log('\nĐã đặt lại cảnh báo rò rỉ');
+
+    // Gửi xác nhận đặt lại cảnh báo
+    const resetMsg = {
+      type: 'leak_reset',
+      status: 'ok'
+    };
+    client.publish(MQTT_TOPICS.leakAlert, JSON.stringify(resetMsg));
+  } else {
+    console.log('\nKhông có cảnh báo rò rỉ nào để đặt lại');
+  }
+}
+
+// Lấy tên chế độ điều khiển
+function getControlModeName(mode) {
+  switch (mode) {
+    case 0:
+      return 'TẮT thủ công';
+    case 1:
+      return 'BẬT thủ công';
+    case 2:
+      return 'TỰ ĐỘNG';
     default:
       return 'Không xác định';
   }

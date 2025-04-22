@@ -12,10 +12,10 @@ import {
 } from './Socket/WebSocketService';
 
 const user = {
-  name: 'Nguyễn Văn A',
-  username: 'nguyenvana',
+  name: 'Nguyễn Sơn Tùng',
+  username: 'anhtraimono',
   birthDate: '01/01/1990',
-  address: 'Hà Nội, Việt Nam',
+  address: 'Thái Bình, Việt Nam',
 };
 
 function App() {

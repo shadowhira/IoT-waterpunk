@@ -8,7 +8,7 @@ import OpacityIcon from '@mui/icons-material/Opacity';
 import TimerIcon from '@mui/icons-material/Timer';
 import WarningIcon from '@mui/icons-material/Warning';
 import { MARGIN_HEADING, THEME_COLOR_BACKGROUND, BORDER_RADIUS_MEDIUM } from '../../Assets/Constants/constants';
-import { addTopicListener, removeTopicListener, sendMessage } from '../../Socket/WebSocketService';
+import { addTopicListener, removeTopicListener, sendMessage, connectWebSocket, isWebSocketConnected } from '../../Socket/WebSocketService';
 import Heading from '../Heading/Heading';
 
 const WarningComponent = () => {
@@ -23,23 +23,96 @@ const WarningComponent = () => {
     useEffect(() => {
         // Đăng ký lắng nghe cảnh báo rò rỉ
         const handleLeakUpdate = (data) => {
-            if (data.topic === 'leak') {
-                setLeakStatus(data.payload);
-                setLoading(false);
+            if (data.topic === 'alert' || data.topic === 'leak') {
+                console.log('Nhận dữ liệu cảnh báo rò rỉ:', data.payload);
+
+                // Kiểm tra nếu là cảnh báo rò rỉ (leak_type > 0)
+                if (data.payload.leak_type > 0) {
+                    setLeakStatus({
+                        detected: true,
+                        type: data.payload.leak_type,
+                        timestamp: data.payload.timestamp || new Date().toISOString(),
+                        details: data.payload
+                    });
+                    setLoading(false);
+                }
             }
         };
 
+        // Đảm bảo WebSocket được kết nối
+        if (!isWebSocketConnected()) {
+            console.log('Kết nối WebSocket từ WarningComponent...');
+            connectWebSocket();
+
+            // Đặt timeout để đảm bảo có đủ thời gian kết nối
+            const timeoutId = setTimeout(() => {
+                // Nếu sau 5 giây vẫn không có dữ liệu, hiển thị trạng thái mặc định
+                if (loading) {
+                    console.log('Không nhận được dữ liệu cảnh báo, hiển thị trạng thái mặc định');
+                    setLoading(false);
+                }
+            }, 5000);
+
+            // Xóa timeout khi component unmount
+            return () => {
+                clearTimeout(timeoutId);
+                removeTopicListener('leak', handleLeakUpdate);
+            };
+        }
+
+        // Đăng ký lắng nghe cả hai topic 'alert' và 'leak'
+        addTopicListener('alert', handleLeakUpdate);
         addTopicListener('leak', handleLeakUpdate);
 
         // Hủy đăng ký khi component unmount
         return () => {
+            removeTopicListener('alert', handleLeakUpdate);
             removeTopicListener('leak', handleLeakUpdate);
         };
-    }, []);
+    }, [loading]);
 
     // Xử lý đặt lại cảnh báo
     const handleResetLeak = () => {
+        // Hiển thị trạng thái đang xử lý
+        setLoading(true);
+
+        // Gửi lệnh đặt lại cảnh báo
         sendMessage('reset_leak', 'reset');
+
+        // Đăng ký lắng nghe phản hồi
+        const handleResponse = (data) => {
+            if (data.topic === 'reset_leak_response' || data.topic === 'leak') {
+                // Đặt lại trạng thái cảnh báo
+                if (data.topic === 'leak' && !data.payload.detected) {
+                    setLeakStatus({
+                        detected: false,
+                        type: 0,
+                        timestamp: null,
+                        details: null
+                    });
+                }
+
+                // Tắt trạng thái đang xử lý
+                setLoading(false);
+
+                // Hủy đăng ký lắng nghe
+                removeTopicListener('reset_leak_response', handleResponse);
+                removeTopicListener('leak', handleResponse);
+            }
+        };
+
+        // Đăng ký lắng nghe phản hồi
+        addTopicListener('reset_leak_response', handleResponse);
+        addTopicListener('leak', handleResponse);
+
+        // Đặt timeout để tránh trạng thái loading vĩnh viễn
+        setTimeout(() => {
+            if (loading) {
+                setLoading(false);
+                removeTopicListener('reset_leak_response', handleResponse);
+                removeTopicListener('leak', handleResponse);
+            }
+        }, 5000);
     };
 
     if (loading) return (

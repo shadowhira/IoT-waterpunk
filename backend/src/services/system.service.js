@@ -78,16 +78,27 @@ class systemService {
   };
 
   static resetLeak = async () => {
-    // Gửi lệnh reset cảnh báo rò rỉ
-    global.client.publish(topic, "reset_leak", function (err) {
-      if (err) {
-        console.error("Error publishing reset_leak command:", err);
-        return { success: false, message: "Failed to reset leak alert" };
-      } else {
-        console.log("Reset leak command published");
-        return { success: true, message: "Leak alert reset command sent" };
-      }
-    });
+    try {
+      // Đặt lại cảnh báo rò rỉ trong database
+      const alertService = require('./alert.service');
+      const result = await alertService.handleLeakAlert({ type: 'leak_reset' });
+
+      // Gửi lệnh reset cảnh báo rò rỉ qua MQTT
+      return new Promise((resolve, reject) => {
+        global.client.publish(topic, "reset_leak", function (err) {
+          if (err) {
+            console.error("Error publishing reset_leak command:", err);
+            reject({ success: false, message: "Failed to reset leak alert" });
+          } else {
+            console.log("Reset leak command published");
+            resolve({ success: true, message: "Leak alert reset command sent", result });
+          }
+        });
+      });
+    } catch (error) {
+      console.error("Error resetting leak alert:", error);
+      throw error;
+    }
   };
 }
 
