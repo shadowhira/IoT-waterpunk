@@ -15,14 +15,14 @@ import { addTopicListener, removeTopicListener, sendMessage } from '../../Socket
 import Heading from '../Heading/Heading';
 
 const SystemConfig = () => {
-  // State cho cấu hình
+  // State cho cấu hình từ biến môi trường
   const [config, setConfig] = useState({
-    tank_height: 15.0,
-    max_temp: 35.0,
-    max_tds: 500.0,
-    leak_threshold: 0.5,
-    flow_threshold: 0.2,
-    pump_timeout: 300
+    tank_height: parseFloat(process.env.REACT_APP_DEFAULT_TANK_HEIGHT || '15.0'),
+    max_temp: parseFloat(process.env.REACT_APP_DEFAULT_MAX_TEMP || '35.0'),
+    max_tds: parseFloat(process.env.REACT_APP_DEFAULT_MAX_TDS || '500.0'),
+    leak_threshold: parseFloat(process.env.REACT_APP_DEFAULT_LEAK_THRESHOLD || '0.5'),
+    flow_threshold: parseFloat(process.env.REACT_APP_DEFAULT_FLOW_THRESHOLD || '0.2'),
+    pump_timeout: parseInt(process.env.REACT_APP_DEFAULT_PUMP_TIMEOUT || '300')
   });
 
   // State cho thông báo

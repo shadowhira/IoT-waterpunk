@@ -1,20 +1,17 @@
 const mqtt = require('mqtt');
 const statsService = require('../services/stats.service');
 
-// Thông tin MQTT broker
-const brokerUrl = 'mqtt://localhost:2403'; // Thay 'localhost' bằng IP của broker nếu cần
-const topic = 'sensor/data'; // Topic bạn muốn subscribe
-
+// Thông tin MQTT broker từ biến môi trường
 const MQTT_CONFIG = {
-  server: "mqtt://localhost", // Địa chỉ MQTT Broker
-  port: 2403, // Port MQTT Broker
+  server: `mqtt://${process.env.MQTT_BROKER_URL || 'localhost'}`,
+  port: parseInt(process.env.MQTT_BROKER_PORT || '2403'),
   topics: {
-    sensorData: "/sensor/data",
-    control: "/sensor/control",
-    level: "/sensor/level",
-    config: "/sensor/config",
-    configStatus: "/sensor/config/status",
-    leakAlert: "/sensor/leak/alert"
+    sensorData: process.env.MQTT_TOPIC_SENSOR_DATA || "/sensor/data",
+    control: process.env.MQTT_TOPIC_CONTROL || "/sensor/control",
+    level: process.env.MQTT_TOPIC_LEVEL || "/sensor/level",
+    config: process.env.MQTT_TOPIC_CONFIG || "/sensor/config",
+    configStatus: process.env.MQTT_TOPIC_CONFIG_STATUS || "/sensor/config/status",
+    leakAlert: process.env.MQTT_TOPIC_LEAK_ALERT || "/sensor/leak/alert"
   },
 };
 

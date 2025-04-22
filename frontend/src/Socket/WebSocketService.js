@@ -1,4 +1,4 @@
-const SOCKET_SERVER_URL = "ws://localhost:4000";
+const SOCKET_SERVER_URL = process.env.REACT_APP_WEBSOCKET_URL || "ws://localhost:4000";
 let socket = null;
 let topicListeners = {}; // Quản lý listener theo topic
 let reconnectInterval = null; // Biến để kiểm soát việc kết nối lại

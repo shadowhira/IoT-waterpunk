@@ -1,32 +1,33 @@
 const mqtt = require('mqtt');
 const WebSocket = require('ws');
+require('dotenv').config();
 
-// Thông tin MQTT broker
-const brokerUrl = 'mqtt://localhost:2403';
-const sensorDataTopic = '/sensor/data'; // Topic nhận dữ liệu từ cảm biến
-const controlTopic = '/sensor/control'; // Topic điều khiển máy bơm
-const configTopic = '/sensor/config'; // Topic cấu hình hệ thống
-const configStatusTopic = '/sensor/config/status'; // Topic trạng thái cấu hình
-const leakAlertTopic = '/sensor/leak/alert'; // Topic cảnh báo rò rỉ
-const levelTopic = '/sensor/level'; // Topic mức nước mong muốn
+// Thông tin MQTT broker từ biến môi trường
+const brokerUrl = `mqtt://${process.env.MQTT_BROKER_URL || 'localhost'}:${process.env.MQTT_BROKER_PORT || '2403'}`;
+const sensorDataTopic = process.env.MQTT_TOPIC_SENSOR_DATA || '/sensor/data'; // Topic nhận dữ liệu từ cảm biến
+const controlTopic = process.env.MQTT_TOPIC_CONTROL || '/sensor/control'; // Topic điều khiển máy bơm
+const configTopic = process.env.MQTT_TOPIC_CONFIG || '/sensor/config'; // Topic cấu hình hệ thống
+const configStatusTopic = process.env.MQTT_TOPIC_CONFIG_STATUS || '/sensor/config/status'; // Topic trạng thái cấu hình
+const leakAlertTopic = process.env.MQTT_TOPIC_LEAK_ALERT || '/sensor/leak/alert'; // Topic cảnh báo rò rỉ
+const levelTopic = process.env.MQTT_TOPIC_LEVEL || '/sensor/level'; // Topic mức nước mong muốn
 
 // Kết nối tới broker
 const client = mqtt.connect(brokerUrl);
 
 // Thiết lập WebSocket server
-const wss = new WebSocket.Server({ port: 4000 });
+const wss = new WebSocket.Server({ port: parseInt(process.env.WEBSOCKET_PORT || '4000') });
 
 // Lưu trữ các kết nối WebSocket
 let connections = [];
 
-// Lưu trữ cấu hình hiện tại
+// Lưu trữ cấu hình hiện tại từ biến môi trường
 let currentConfig = {
-  tank_height: 15.0,
-  max_temp: 35.0,
-  max_tds: 500.0,
-  leak_threshold: 0.5,
-  flow_threshold: 0.2,
-  pump_timeout: 300
+  tank_height: parseFloat(process.env.DEFAULT_TANK_HEIGHT || '15.0'),
+  max_temp: parseFloat(process.env.DEFAULT_MAX_TEMP || '35.0'),
+  max_tds: parseFloat(process.env.DEFAULT_MAX_TDS || '500.0'),
+  leak_threshold: parseFloat(process.env.DEFAULT_LEAK_THRESHOLD || '0.5'),
+  flow_threshold: parseFloat(process.env.DEFAULT_FLOW_THRESHOLD || '0.2'),
+  pump_timeout: parseInt(process.env.DEFAULT_PUMP_TIMEOUT || '300')
 };
 
 // Lưu trữ trạng thái rò rỉ
