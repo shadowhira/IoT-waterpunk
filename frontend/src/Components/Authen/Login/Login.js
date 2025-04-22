@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { Box, TextField, Button, Typography, Alert } from '@mui/material';
+import { Box, TextField, Button, Typography, Alert, Divider, Stack } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
+import PersonIcon from '@mui/icons-material/Person';
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 
 function Login() {
     const [username, setUsername] = useState(''); // Trạng thái cho tên người dùng
@@ -48,6 +50,18 @@ function Login() {
         navigate("/register")
     };
 
+    // Hàm xử lý chuyển hướng trực tiếp đến trang user
+    const handleSkipToUser = () => {
+        console.log('Bỏ qua đăng nhập - vào trang User');
+        navigate("/dashboard");
+    };
+
+    // Hàm xử lý chuyển hướng trực tiếp đến trang admin
+    const handleSkipToAdmin = () => {
+        console.log('Bỏ qua đăng nhập - vào trang Admin');
+        navigate("/admindashboard");
+    };
+
     return (
         <Box
             sx={{
@@ -55,19 +69,33 @@ function Login() {
                 flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
-                height: '100vh',
+                minHeight: '100vh',
                 padding: '20px',
                 backgroundColor: '#f5f5f5',
+                backgroundImage: 'linear-gradient(to bottom right, #f5f5f5, #e0e0e0)',
             }}
         >
-            <Typography variant="h4" sx={{ marginBottom: 2 }}>
+            <Typography variant="h4" sx={{ marginBottom: 2, fontWeight: 'bold', color: '#333' }}>
                 Đăng Nhập
+            </Typography>
+            <Typography variant="body2" sx={{ marginBottom: 3, color: '#666', textAlign: 'center' }}>
+                Đăng nhập để truy cập vào hệ thống quản lý nước
             </Typography>
 
             {error && <Alert severity="error">{error}</Alert>} {/* Hiển thị thông báo lỗi */}
             {success && <Alert severity="success">{success}</Alert>} {/* Hiển thị thông báo thành công */}
 
-            <form onSubmit={handleLogin} style={{ width: '300px' }}>
+            <Box
+                component="form"
+                onSubmit={handleLogin}
+                sx={{
+                    width: '300px',
+                    backgroundColor: 'white',
+                    padding: 3,
+                    borderRadius: 2,
+                    boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
+                }}
+            >
                 <TextField
                     label="Tên người dùng"
                     variant="outlined"
@@ -75,6 +103,7 @@ function Login() {
                     margin="normal"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)} // Cập nhật tên người dùng
+                    placeholder="Nhập tên người dùng"
                 />
                 <TextField
                     label="Mật khẩu"
@@ -84,11 +113,26 @@ function Login() {
                     margin="normal"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)} // Cập nhật mật khẩu
+                    placeholder="Nhập mật khẩu"
                 />
-                <Button variant="contained" color="primary" onClick={handleLogin} fullWidth sx={{ marginTop: 2 }}>
+                <Typography variant="caption" sx={{ display: 'block', mb: 2, mt: 1, color: 'text.secondary' }}>
+                    * Nhập admin/123123 để đăng nhập với quyền admin
+                </Typography>
+                <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={handleLogin}
+                    fullWidth
+                    sx={{
+                        marginTop: 1,
+                        py: 1.2,
+                        fontWeight: 'bold',
+                        borderRadius: 1.5
+                    }}
+                >
                     Đăng Nhập
                 </Button>
-            </form>
+            </Box>
 
             {/* Nút Quên Mật Khẩu */}
             <Button
@@ -107,6 +151,60 @@ function Login() {
                     Đăng ký ngay
                 </Button>
             </Typography>
+
+            {/* Phần bỏ qua đăng nhập */}
+            <Box sx={{ width: '300px', mt: 4 }}>
+                <Divider sx={{ mb: 2 }}>
+                    <Typography variant="body2" color="text.secondary">
+                        Hoặc bỏ qua đăng nhập
+                    </Typography>
+                </Divider>
+
+                <Stack direction="row" spacing={2} justifyContent="center">
+                    <Button
+                        variant="contained"
+                        color="success"
+                        startIcon={<PersonIcon />}
+                        onClick={handleSkipToUser}
+                        sx={{
+                            flex: 1,
+                            borderRadius: 2,
+                            py: 1.5,
+                            boxShadow: '0 4px 8px rgba(0,128,0,0.2)',
+                            '&:hover': {
+                                boxShadow: '0 6px 12px rgba(0,128,0,0.3)',
+                                transform: 'translateY(-2px)'
+                            },
+                            transition: 'all 0.2s'
+                        }}
+                    >
+                        Vào User
+                    </Button>
+
+                    <Button
+                        variant="contained"
+                        color="warning"
+                        startIcon={<AdminPanelSettingsIcon />}
+                        onClick={handleSkipToAdmin}
+                        sx={{
+                            flex: 1,
+                            borderRadius: 2,
+                            py: 1.5,
+                            boxShadow: '0 4px 8px rgba(255,152,0,0.2)',
+                            '&:hover': {
+                                boxShadow: '0 6px 12px rgba(255,152,0,0.3)',
+                                transform: 'translateY(-2px)'
+                            },
+                            transition: 'all 0.2s'
+                        }}
+                    >
+                        Vào Admin
+                    </Button>
+                </Stack>
+                <Typography variant="caption" sx={{ display: 'block', mt: 2, textAlign: 'center', color: 'text.secondary' }}>
+                    Chỉ dùng cho mục đích phát triển và kiểm thử
+                </Typography>
+            </Box>
         </Box>
     );
 }
