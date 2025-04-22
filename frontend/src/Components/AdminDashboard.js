@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import {
   Box,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import {
   BORDER_RADIUS_BIG,
@@ -16,7 +18,6 @@ import {
   createItemInvoiceAnimation,
   hexToRgba,
 } from "../Assets/Constants/utils";
-import logoImage from "../Assets/Images/logo.png"; // Đường dẫn ảnh logo
 import ToggleSwitch from "./Buttons/Toggles/ToggleSwitch";
 import ToggleGroupThree from "./Buttons/ToggleGroupThree";
 import Pool from "./PoolWater/Pool";
@@ -28,6 +29,8 @@ import {
 function AdminDashboard() {
   const slideLeft = createItemInvoiceAnimation("-100px");
   const slideRight = createItemInvoiceAnimation("100px");
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   // State để quản lý ratio của pool
   // const [activeToggle, setActiveToggle] = useState(1);
   const [ratio, setRatio] = useState(0);
@@ -140,197 +143,165 @@ function AdminDashboard() {
         display: "flex",
         flexDirection: { xs: "column", md: "row" },
         alignItems: "center",
-        // marginRight: { xs: "10px", sm: "30px", md: "50px" },
-        // marginLeft: { xs: "10px", sm: "30px", md: "50px" },
+        padding: { xs: "10px", sm: "15px", md: "20px" },
         overflowY: { xs: "auto", md: "hidden" },
         overflowX: "hidden",
+        paddingTop: isMobile ? "65px" : MARGIN_HEADING / 8, // Thêm padding-top cho mobile để tránh bị AppBar che
+        paddingBottom: isMobile ? "65px" : "20px", // Thêm padding-bottom cho mobile để tránh bị BottomNavigation che
       }}
     >
+      {/* Phần điều khiển máy bơm */}
       <Box
         sx={{
-          height: `calc(100vh - (${HEIGHT_USERINFO}px + ${HEIGHT_FOOTER}px + ${MARGIN_HEADING}px))`,
-          position: "relative",
+          flex: { xs: 1, md: 1 },
+          width: "100%",
+          height: { xs: "auto", md: "80%" },
           display: "flex",
-          justifyContent: "center",
           alignItems: "center",
-          // backgroundColor: '#f0f0f0'
-          // marginTop: MARGIN_HEADING / 8,
-          flex: 2,
+          justifyContent: "center",
+          marginBottom: { xs: "20px", md: 0 },
+          marginRight: { xs: 0, md: "20px" },
+          maxWidth: { xs: "100%", sm: "500px", md: "600px" },
+          margin: { xs: "0 auto 20px", md: "0 20px 0 0" },
         }}
       >
         <Box
           sx={{
+            backgroundColor: "#fff",
+            borderRadius: { xs: BORDER_RADIUS_BIG / 2, sm: BORDER_RADIUS_BIG / 1.5, md: BORDER_RADIUS_BIG },
+            boxShadow: `${hexToRgba(COLOR_CONTENT_ADMIN, 0.4)} 5px 5px, ${hexToRgba(COLOR_CONTENT_ADMIN, 0.3)} 10px 10px, ${hexToRgba(COLOR_CONTENT_ADMIN, 0.2)} 15px 15px, ${hexToRgba(COLOR_CONTENT_ADMIN, 0.1)} 20px 20px, ${hexToRgba(COLOR_CONTENT_ADMIN, 0.05)} 25px 25px`,
             display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
             justifyContent: "center",
-            maxWidth: "900px",
-            minWidth: { xs: "300px", sm: "500px", md: "800px" },
-            width: { xs: "95%", sm: "90%", md: "80%" },
-            height: { xs: "auto", md: "80%" },
-            flexDirection: { xs: "column", md: "row" },
+            padding: { xs: "12px", sm: "18px", md: "25px" },
+            width: "100%",
+            maxWidth: { xs: "100%", sm: "450px", md: "500px" },
+            animation: `${slideRight} 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.3s both`,
           }}
         >
           <Box
             sx={{
-              flex: 2, // Box thứ nhất chiếm 2 phần
-              backgroundColor: COLOR_CONTENT_ADMIN, // Màu để dễ phân biệt (tuỳ chọn)
               display: "flex",
-              flexDirection: "column",
+              width: "100%",
               alignItems: "center",
               justifyContent: "center",
-              borderTopLeftRadius: BORDER_RADIUS_BIG * 2,
-              borderBottomLeftRadius: BORDER_RADIUS_BIG * 2,
-              animation: `${slideLeft} 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.3s both`,
+              marginBottom: { xs: "15px", sm: "20px" },
             }}
           >
-            <Box
-              sx={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                width: "80%",
-                height: "80%", // Chiều cao Box (tuỳ chỉnh theo ý bạn)
-                backgroundColor: "#fff", // Màu nền (tuỳ chỉnh)
-                border: `3px solid ${THEME_COLOR_BORDER}`, // Viền Box (tuỳ chỉnh)
-                borderRadius: BORDER_RADIUS_MEDIUM, // Bo góc (tuỳ chỉnh)
-                padding: "16px", // Khoảng cách bên trong
-                boxShadow: `rgba(0, 0, 0, 0.25) 0px 25px 50px -12px`,
-              }}
-            >
-              {/* Logo */}
-              <Box
-                component="img"
-                src={logoImage}
-                alt="Logo"
-                sx={{
-                  width: "85%",
-                }}
-              />
-              <Typography
-                variant="h3"
-                sx={{
-                  fontWeight: "bold",
-                  color: "#333",
-                  textShadow: `2px 2px 2px ${hexToRgba(THEME_COLOR_BORDER)}`,
-                  marginTop: "40px",
-                }}
-              >
-                Welcome Admin
-              </Typography>
-            </Box>
+            <ToggleSwitch></ToggleSwitch>
           </Box>
           <Box
             sx={{
-              flex: 1, // Box thứ hai chiếm 1 phần
-              backgroundColor: "#fff", // Màu để dễ phân biệt (tuỳ chọn)
-              borderTopRightRadius: BORDER_RADIUS_BIG,
-              borderBottomRightRadius: BORDER_RADIUS_BIG,
-              boxShadow: `${hexToRgba(
-                COLOR_CONTENT_ADMIN,
-                0.4
-              )} 5px 5px, ${hexToRgba(
-                COLOR_CONTENT_ADMIN,
-                0.3
-              )} 10px 10px, ${hexToRgba(
-                COLOR_CONTENT_ADMIN,
-                0.2
-              )} 15px 15px, ${hexToRgba(
-                COLOR_CONTENT_ADMIN,
-                0.1
-              )} 20px 20px, ${hexToRgba(COLOR_CONTENT_ADMIN, 0.05)} 25px 25px`,
               display: "flex",
-              flexDirection: "column",
+              width: "100%",
               alignItems: "center",
               justifyContent: "center",
-              animation: `${slideRight} 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.3s both`,
             }}
           >
-            <Box
-              sx={{
-                display: "flex",
-                flex: 1,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <ToggleSwitch></ToggleSwitch>
-            </Box>
-            <Box
-              sx={{
-                display: "flex",
-                flex: 3,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <ToggleGroupThree></ToggleGroupThree>
-            </Box>
+            <ToggleGroupThree></ToggleGroupThree>
           </Box>
         </Box>
       </Box>
+
+      {/* Phần hiển thị thông tin bể nước và cảm biến */}
       <Box
         sx={{
-          flex: 1,
-          // backgroundColor : '#666'
+          flex: { xs: 1, md: 1 },
           width: "100%",
-          height: "80%",
+          height: { xs: "auto", md: "80%" },
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           flexDirection: "column",
+          marginLeft: { xs: 0, md: "20px" },
+          maxWidth: { xs: "100%", sm: "500px", md: "600px" },
+          margin: { xs: "0 auto", md: "0 0 0 20px" },
         }}
       >
         <Box
           sx={{
-            flex: 1,
             width: "100%",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
+            marginBottom: { xs: "15px", sm: "20px" },
           }}
         >
           <SliderControlPool></SliderControlPool>
         </Box>
         <Box
           sx={{
-            flex: 3,
             width: "100%",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             flexDirection: "column",
+            backgroundColor: "#fff",
+            borderRadius: { xs: BORDER_RADIUS_BIG / 2, sm: BORDER_RADIUS_BIG / 1.5, md: BORDER_RADIUS_BIG },
+            padding: { xs: "12px", sm: "18px", md: "20px" },
+            boxShadow: `${hexToRgba(COLOR_CONTENT_ADMIN, 0.3)} 0px 5px 15px`,
+            animation: `${slideLeft} 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.3s both`,
           }}
         >
-          <Pool ratio={ratio}></Pool>
+          <Box
+            sx={{
+              width: "100%",
+              maxWidth: { xs: "200px", sm: "250px", md: "300px" },
+              marginBottom: { xs: "15px", sm: "20px" },
+              margin: "0 auto 15px",
+            }}
+          >
+            <Pool ratio={ratio}></Pool>
+          </Box>
 
           {/* Hiển thị thông tin mực nước và EC (TDS) */}
           <Box
             sx={{
               width: "100%",
               display: "flex",
+              flexDirection: { xs: "column", sm: "row" },
               justifyContent: "space-around",
-              marginTop: "20px",
-              padding: "0 20px",
+              alignItems: "center",
+              marginTop: { xs: "10px", sm: "20px" },
+              gap: { xs: "15px", sm: "20px" },
+              padding: { xs: "0 10px", sm: "0 15px" },
             }}
           >
             <Box
               sx={{
                 backgroundColor: "#f5f5f5",
-                borderRadius: "10px",
-                padding: "10px 15px",
+                borderRadius: { xs: "6px", sm: "8px", md: "10px" },
+                padding: { xs: "6px 10px", sm: "8px 12px", md: "10px 15px" },
                 boxShadow: "0 2px 5px rgba(0,0,0,0.1)",
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
+                width: { xs: "100%", sm: "auto" },
+                minWidth: { xs: "auto", sm: "150px" },
               }}
             >
-              <Typography variant="subtitle1" fontWeight="bold" color="primary">
+              <Typography
+                variant="subtitle1"
+                fontWeight="bold"
+                color="primary"
+                sx={{ fontSize: { xs: "0.9rem", sm: "1rem" } }}
+              >
                 Mực nước
               </Typography>
-              <Typography variant="h5" fontWeight="bold" color="secondary">
+              <Typography
+                variant="h5"
+                fontWeight="bold"
+                color="secondary"
+                sx={{ fontSize: { xs: "1.5rem", sm: "1.75rem", md: "2rem" } }}
+              >
                 {waterLevelInfo.percentage.toFixed(1)}%
               </Typography>
-              <Typography variant="body2" color="textSecondary">
+              <Typography
+                variant="body2"
+                color="textSecondary"
+                sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}
+              >
                 Khoảng cách: {waterLevelInfo.distance.toFixed(1)} cm
               </Typography>
             </Box>
@@ -338,21 +309,37 @@ function AdminDashboard() {
             <Box
               sx={{
                 backgroundColor: "#f5f5f5",
-                borderRadius: "10px",
-                padding: "10px 15px",
+                borderRadius: { xs: "6px", sm: "8px", md: "10px" },
+                padding: { xs: "6px 10px", sm: "8px 12px", md: "10px 15px" },
                 boxShadow: "0 2px 5px rgba(0,0,0,0.1)",
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
+                width: { xs: "100%", sm: "auto" },
+                minWidth: { xs: "auto", sm: "150px" },
               }}
             >
-              <Typography variant="subtitle1" fontWeight="bold" color="primary">
+              <Typography
+                variant="subtitle1"
+                fontWeight="bold"
+                color="primary"
+                sx={{ fontSize: { xs: "0.9rem", sm: "1rem" } }}
+              >
                 Độ đục (TDS)
               </Typography>
-              <Typography variant="h5" fontWeight="bold" color="secondary">
+              <Typography
+                variant="h5"
+                fontWeight="bold"
+                color="secondary"
+                sx={{ fontSize: { xs: "1.5rem", sm: "1.75rem", md: "2rem" } }}
+              >
                 {sensorData?.tds || 0} ppm
               </Typography>
-              <Typography variant="body2" color="textSecondary">
+              <Typography
+                variant="body2"
+                color="textSecondary"
+                sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}
+              >
                 Nhiệt độ: {sensorData?.temperature || 0}°C
               </Typography>
             </Box>

@@ -8,12 +8,16 @@ import {
   INSET_POOL,
   WIDTH_POOL,
 } from "../../Assets/Constants/constants";
-import { Box, Typography } from "@mui/material";
+import { Box, Typography, useMediaQuery, useTheme } from "@mui/material";
 
 const Pool = ({ ratio }) => {
   const [heightWater, setHeightWater] = useState(0);
   const [displayedRatio, setDisplayedRatio] = useState(0); // State cho tỷ lệ hiển thị
   const transitionDuration = 1000; // Thời gian thay đổi height (ms)
+
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
 
   useEffect(() => {
     // Xử lý ratio không hợp lệ
@@ -55,8 +59,8 @@ const Pool = ({ ratio }) => {
       <div className="card">
         <Box
           sx={{
-            width: { xs: `${WIDTH_POOL / 4}px`, sm: `${WIDTH_POOL / 3.5}px`, md: `${WIDTH_POOL / 3}px` },
-            height: { xs: `${WIDTH_POOL / 4}px`, sm: `${WIDTH_POOL / 3.5}px`, md: `${WIDTH_POOL / 3}px` },
+            width: isMobile ? `${WIDTH_POOL / 5}px` : isTablet ? `${WIDTH_POOL / 4}px` : `${WIDTH_POOL / 3}px`,
+            height: isMobile ? `${WIDTH_POOL / 5}px` : isTablet ? `${WIDTH_POOL / 4}px` : `${WIDTH_POOL / 3}px`,
             borderRadius: "50%",
             backgroundColor: COLOR_WATER,
             zIndex: 30,
@@ -67,10 +71,11 @@ const Pool = ({ ratio }) => {
         >
           <Typography
             variant="h4"
+            className="water-level-text"
             sx={{
               fontWeight: "bold",
               color: "#fff",
-              fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2rem' },
+              fontSize: isMobile ? '1.2rem' : isTablet ? '1.5rem' : '2rem',
             }}
           >
             {displayedRatio}%
@@ -89,7 +94,7 @@ const Pool = ({ ratio }) => {
         >
           <Box
             sx={{
-              width: `${WIDTH_POOL - 20}px`,
+              width: "100%",
               height: `${heightWater}px`,
               position: "absolute",
               bottom: "0px",

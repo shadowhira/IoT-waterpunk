@@ -12,6 +12,33 @@
     box-shadow: rgb(44, 128, 218) 0px 20px 30px -10px;
 }
 
+/* Media queries cho responsive */
+@media screen and (max-width: 768px) {
+    .filter-switch {
+        height: 80px;
+        width: 160px;
+    }
+    .filter-switch .background {
+        height: 70px;
+    }
+    .filter-switch label {
+        font-size: 16px;
+    }
+}
+
+@media screen and (max-width: 480px) {
+    .filter-switch {
+        height: 60px;
+        width: 120px;
+    }
+    .filter-switch .background {
+        height: 50px;
+    }
+    .filter-switch label {
+        font-size: 14px;
+    }
+}
+
 .filter-switch input {
     display: none;
     pointer-events: none; /* Vô hiệu hóa sự kiện nhấp chuột */

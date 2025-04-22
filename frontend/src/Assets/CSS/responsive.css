@@ -1,0 +1,106 @@
+/* Responsive CSS cho toàn bộ ứng dụng */
+
+/* Ẩn thanh cuộn ngang trên tất cả các thiết bị */
+html, body {
+  overflow-x: hidden;
+  width: 100%;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Điều chỉnh cho màn hình nhỏ */
+@media screen and (max-width: 600px) {
+  /* Thêm padding-top cho nội dung chính để tránh bị AppBar che */
+  .main-content {
+    padding-top: 56px;
+    padding-bottom: 56px;
+  }
+
+  /* Điều chỉnh kích thước font cho tiêu đề */
+  h1 {
+    font-size: 1.8rem !important;
+  }
+  
+  h2 {
+    font-size: 1.5rem !important;
+  }
+  
+  h3 {
+    font-size: 1.3rem !important;
+  }
+
+  /* Điều chỉnh padding cho các container */
+  .MuiContainer-root {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+
+  /* Điều chỉnh kích thước cho các bảng */
+  .MuiTable-root {
+    font-size: 0.75rem !important;
+  }
+
+  /* Điều chỉnh kích thước cho các nút */
+  .MuiButton-root {
+    font-size: 0.8rem !important;
+    padding: 6px 12px !important;
+  }
+}
+
+/* Điều chỉnh cho màn hình trung bình */
+@media screen and (min-width: 601px) and (max-width: 960px) {
+  /* Điều chỉnh kích thước font cho tiêu đề */
+  h1 {
+    font-size: 2.2rem !important;
+  }
+  
+  h2 {
+    font-size: 1.8rem !important;
+  }
+  
+  h3 {
+    font-size: 1.5rem !important;
+  }
+}
+
+/* Điều chỉnh cho các bảng dữ liệu trên màn hình nhỏ */
+@media screen and (max-width: 600px) {
+  .MuiTableCell-root {
+    padding: 8px 4px !important;
+  }
+  
+  .MuiTableCell-head {
+    font-size: 0.75rem !important;
+  }
+  
+  .MuiTableCell-body {
+    font-size: 0.7rem !important;
+  }
+  
+  /* Ẩn một số cột không quan trọng trên mobile */
+  .hide-on-mobile {
+    display: none !important;
+  }
+}
+
+/* Điều chỉnh cho các biểu đồ trên màn hình nhỏ */
+@media screen and (max-width: 600px) {
+  .chart-container {
+    height: 250px !important;
+  }
+}
+
+/* Điều chỉnh cho các form trên màn hình nhỏ */
+@media screen and (max-width: 600px) {
+  .MuiFormControl-root {
+    margin-bottom: 12px !important;
+  }
+  
+  .MuiInputLabel-root {
+    font-size: 0.9rem !important;
+  }
+  
+  .MuiInputBase-input {
+    font-size: 0.9rem !important;
+    padding: 10px 8px !important;
+  }
+}

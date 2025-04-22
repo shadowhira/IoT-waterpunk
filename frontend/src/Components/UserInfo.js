@@ -6,6 +6,8 @@ import {
   Menu,
   MenuItem,
   IconButton,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import NotificationsIcon from "@mui/icons-material/Notifications"; // Import biểu tượng thông báo
 import defaultAvatar from "../Assets/Images/defaultAvatar.png"; // Đường dẫn ảnh đại diện mặc định
@@ -31,6 +33,9 @@ function UserInfo({ user }) {
   const [notifications, setNotifications] = useState(allNotifications); // Trạng thái để lưu trữ thông báo
   const [notificationAnchorEl, setNotificationAnchorEl] = useState(null); // Trạng thái cho menu thông báo
   const slideDown = createSlideDownAnimation(TRANSITION_USER_INFO);
+
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const handleMenuClick = (event) => {
     setAnchorEl(event.currentTarget); // Mở menu
@@ -124,12 +129,13 @@ function UserInfo({ user }) {
         top: 0, // Nằm ở dưới cùng của trang
         left: 0, // Căn sát bên trái
         width: "100%", // Chiếm toàn bộ chiều ngang
-        zIndex: "1",
-        borderBottomLeftRadius: { xs: BORDER_RADIUS_MEDIUM / 2, sm: BORDER_RADIUS_MEDIUM },
-        borderBottomRightRadius: { xs: BORDER_RADIUS_MEDIUM / 2, sm: BORDER_RADIUS_MEDIUM },
+        zIndex: isMobile ? 1050 : 1, // Z-index cao hơn trên mobile để hiển thị trên AppBar
+        borderBottomLeftRadius: { xs: BORDER_RADIUS_MEDIUM / 3, sm: BORDER_RADIUS_MEDIUM / 2, md: BORDER_RADIUS_MEDIUM },
+        borderBottomRightRadius: { xs: BORDER_RADIUS_MEDIUM / 3, sm: BORDER_RADIUS_MEDIUM / 2, md: BORDER_RADIUS_MEDIUM },
         animation: `${slideDown} 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) ${TIME_DELAY} both`,
-        padding: { xs: "5px", sm: "10px" }, // Thêm padding trên màn hình nhỏ
+        padding: { xs: "8px 5px", sm: "10px" }, // Tăng padding trên màn hình nhỏ
         flexDirection: { xs: "column", sm: "row" }, // Chuyển sang layout dọc trên màn hình nhỏ
+        marginTop: { xs: isMobile ? '56px' : '0', sm: '0' }, // Thêm margin-top trên mobile để tránh bị AppBar che
       }}
     >
       {/* Logo */}
@@ -150,11 +156,11 @@ function UserInfo({ user }) {
           justifyContent: { xs: "center", sm: "flex-end" },
           display: "flex",
           alignItems: "center", // Căn giữa các item theo chiều dọc
-          borderBottomLeftRadius: { xs: BORDER_RADIUS_MEDIUM / 2, sm: BORDER_RADIUS_MEDIUM },
-          borderBottomRightRadius: { xs: BORDER_RADIUS_MEDIUM / 2, sm: BORDER_RADIUS_MEDIUM },
+          borderBottomLeftRadius: { xs: BORDER_RADIUS_MEDIUM / 3, sm: BORDER_RADIUS_MEDIUM / 2, md: BORDER_RADIUS_MEDIUM },
+          borderBottomRightRadius: { xs: BORDER_RADIUS_MEDIUM / 3, sm: BORDER_RADIUS_MEDIUM / 2, md: BORDER_RADIUS_MEDIUM },
           flexDirection: { xs: "column", sm: "row" }, // Chuyển sang layout dọc trên màn hình nhỏ
           width: "100%",
-          gap: { xs: "10px", sm: "0" } // Khoảng cách giữa các phần tử trên màn hình nhỏ
+          gap: { xs: "8px", sm: "5px", md: "0" } // Khoảng cách giữa các phần tử trên màn hình nhỏ
         }}
       >
         {/* Biểu tượng thông báo */}
