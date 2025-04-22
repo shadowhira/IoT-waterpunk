@@ -8,6 +8,7 @@
     place-items: center;
     overflow: hidden;
     border-radius: 20px;
+    max-width: 100%;
 }
 
 .card-wrap {
@@ -16,6 +17,22 @@
     box-shadow: rgb(38, 57, 77) 0px 20px 30px -10px;
     opacity: 0; /* Bắt đầu với opacity = 0 */
     animation: fadeIn 1s forwards; /* Hiệu ứng fadeIn trong 1 giây */
+    max-width: 100%;
+}
+
+/* Media queries cho responsive */
+@media screen and (max-width: 768px) {
+    .card {
+        width: calc(var(--WIDTH_POOL) * 0.8);
+        height: calc(var(--HEIGHT_POOL) * 0.8);
+    }
+}
+
+@media screen and (max-width: 480px) {
+    .card {
+        width: calc(var(--WIDTH_POOL) * 0.6);
+        height: calc(var(--HEIGHT_POOL) * 0.6);
+    }
 }
 
 @keyframes fadeIn {

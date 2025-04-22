@@ -16,15 +16,20 @@ const Pool = ({ ratio }) => {
   const transitionDuration = 1000; // Thời gian thay đổi height (ms)
 
   useEffect(() => {
-    if (ratio < 0 || ratio > 1) ratio = 0; // Bỏ qua nếu tỷ lệ không hợp lệ
+    // Xử lý ratio không hợp lệ
+    const validRatio = ratio < 0 || ratio > 1 ? 0 : ratio;
+
     // Cập nhật chiều cao nước
     const updatedHeight =
-      ratio * (HEIGHT_POOL - 2 * INSET_POOL - HEIGHT_WAVY / 7);
+      validRatio * (HEIGHT_POOL - 2 * INSET_POOL - HEIGHT_WAVY / 7);
     setHeightWater(updatedHeight);
 
     // Cập nhật tỷ lệ hiển thị (dần dần)
-    const targetRatio = Math.round(ratio * 100); // Tỷ lệ mục tiêu
+    const targetRatio = Math.round(validRatio * 100); // Tỷ lệ mục tiêu
     const stepCount = Math.abs(targetRatio - displayedRatio); // Số bước tăng giá trị hiển thị (mượt mà hơn)
+
+    if (stepCount === 0) return;
+
     const stepDuration = transitionDuration / stepCount; // Thời gian mỗi bước
     const stepValue = (targetRatio - displayedRatio) / stepCount; // Giá trị tăng mỗi bước
 
@@ -43,15 +48,15 @@ const Pool = ({ ratio }) => {
     }, stepDuration);
 
     return () => clearInterval(intervalId); // Cleanup interval khi component unmount
-  }, [ratio]); // Chạy lại khi ratio thay đổi
+  }, [ratio, displayedRatio, transitionDuration]); // Chỉ giữ lại các dependencies cần thiết
 
   return (
     <div className="card-wrap">
       <div className="card">
         <Box
           sx={{
-            width: `${WIDTH_POOL / 3}px`,
-            height: `${WIDTH_POOL / 3}px`,
+            width: { xs: `${WIDTH_POOL / 4}px`, sm: `${WIDTH_POOL / 3.5}px`, md: `${WIDTH_POOL / 3}px` },
+            height: { xs: `${WIDTH_POOL / 4}px`, sm: `${WIDTH_POOL / 3.5}px`, md: `${WIDTH_POOL / 3}px` },
             borderRadius: "50%",
             backgroundColor: COLOR_WATER,
             zIndex: 30,
@@ -65,6 +70,7 @@ const Pool = ({ ratio }) => {
             sx={{
               fontWeight: "bold",
               color: "#fff",
+              fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2rem' },
             }}
           >
             {displayedRatio}%

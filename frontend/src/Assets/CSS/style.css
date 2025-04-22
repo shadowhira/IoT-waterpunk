@@ -12,3 +12,31 @@
     --WIDTH_LID : 100px;
     --HEIGHT_LID : 25px;
 }
+
+/* Media queries cho responsive */
+@media screen and (max-width: 1200px) {
+    :root {
+        --HEIGHT_POOL : 350px;
+        --WIDTH_POOL : 260px;
+        --WIDTH_LID : 90px;
+        --HEIGHT_LID : 22px;
+    }
+}
+
+@media screen and (max-width: 768px) {
+    :root {
+        --HEIGHT_POOL : 300px;
+        --WIDTH_POOL : 220px;
+        --WIDTH_LID : 80px;
+        --HEIGHT_LID : 20px;
+    }
+}
+
+@media screen and (max-width: 480px) {
+    :root {
+        --HEIGHT_POOL : 250px;
+        --WIDTH_POOL : 180px;
+        --WIDTH_LID : 70px;
+        --HEIGHT_LID : 18px;
+    }
+}

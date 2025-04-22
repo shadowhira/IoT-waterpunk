@@ -6,14 +6,10 @@ import {
   Menu,
   MenuItem,
   IconButton,
-  List,
-  ListItem,
-  ListItemText,
 } from "@mui/material";
 import NotificationsIcon from "@mui/icons-material/Notifications"; // Import biểu tượng thông báo
 import defaultAvatar from "../Assets/Images/defaultAvatar.png"; // Đường dẫn ảnh đại diện mặc định
 import { useNavigate } from "react-router-dom";
-import logoImage from "../Assets/Images/logo.png"; // Đường dẫn ảnh logo
 import {
   BORDER_RADIUS_MEDIUM,
   THEME_COLOR_BACKGROUND,
@@ -121,7 +117,7 @@ function UserInfo({ user }) {
         backgroundColor: THEME_COLOR_BACKGROUND,
         color: THEME_COLOR_FONT,
         borderBottom: `3px solid ${THEME_COLOR_BORDER}`,
-        justifyContent: "flex-end",
+        justifyContent: { xs: "center", sm: "flex-end" }, // Căn giữa trên màn hình nhỏ
         display: "flex",
         alignItems: "center", // Căn giữa các item theo chiều dọc
         position: "sticky",
@@ -129,9 +125,11 @@ function UserInfo({ user }) {
         left: 0, // Căn sát bên trái
         width: "100%", // Chiếm toàn bộ chiều ngang
         zIndex: "1",
-        borderBottomLeftRadius: BORDER_RADIUS_MEDIUM,
-        borderBottomRightRadius: BORDER_RADIUS_MEDIUM,
+        borderBottomLeftRadius: { xs: BORDER_RADIUS_MEDIUM / 2, sm: BORDER_RADIUS_MEDIUM },
+        borderBottomRightRadius: { xs: BORDER_RADIUS_MEDIUM / 2, sm: BORDER_RADIUS_MEDIUM },
         animation: `${slideDown} 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) ${TIME_DELAY} both`,
+        padding: { xs: "5px", sm: "10px" }, // Thêm padding trên màn hình nhỏ
+        flexDirection: { xs: "column", sm: "row" }, // Chuyển sang layout dọc trên màn hình nhỏ
       }}
     >
       {/* Logo */}
@@ -148,12 +146,15 @@ function UserInfo({ user }) {
       <Box
         sx={{
           backgroundColor: THEME_COLOR_BACKGROUND,
-          padding: "10px",
-          justifyContent: "flex-end",
+          padding: { xs: "5px", sm: "10px" },
+          justifyContent: { xs: "center", sm: "flex-end" },
           display: "flex",
-          alignItems: "center", // Căn giữa các item theo chiều dọc,
-          borderBottomLeftRadius: BORDER_RADIUS_MEDIUM,
-          borderBottomRightRadius: BORDER_RADIUS_MEDIUM,
+          alignItems: "center", // Căn giữa các item theo chiều dọc
+          borderBottomLeftRadius: { xs: BORDER_RADIUS_MEDIUM / 2, sm: BORDER_RADIUS_MEDIUM },
+          borderBottomRightRadius: { xs: BORDER_RADIUS_MEDIUM / 2, sm: BORDER_RADIUS_MEDIUM },
+          flexDirection: { xs: "column", sm: "row" }, // Chuyển sang layout dọc trên màn hình nhỏ
+          width: "100%",
+          gap: { xs: "10px", sm: "0" } // Khoảng cách giữa các phần tử trên màn hình nhỏ
         }}
       >
         {/* Biểu tượng thông báo */}
@@ -194,7 +195,14 @@ function UserInfo({ user }) {
             alignItems: "center",
           }}
         >
-          <Typography variant="h6" sx={{ marginRight: 1 }}>
+          <Typography
+            variant="h6"
+            sx={{
+              marginRight: { xs: 0, sm: 1 },
+              fontSize: { xs: '0.9rem', sm: '1rem', md: '1.25rem' }, // Font size nhỏ hơn trên màn hình nhỏ
+              textAlign: 'center' // Căn giữa text trên màn hình nhỏ
+            }}
+          >
             Xin chào, {user.name}
           </Typography>
           <Avatar

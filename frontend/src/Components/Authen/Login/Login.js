@@ -5,8 +5,8 @@ import { useNavigate } from 'react-router-dom';
 function Login() {
     const [username, setUsername] = useState(''); // Trạng thái cho tên người dùng
     const [password, setPassword] = useState(''); // Trạng thái cho mật khẩu
-    const [error, setError] = useState(''); // Trạng thái cho thông báo lỗi
-    const [success, setSuccess] = useState(''); // Trạng thái cho thông báo thành công
+    const [error] = useState(''); // Trạng thái cho thông báo lỗi
+    const [success] = useState(''); // Trạng thái cho thông báo thành công
     const navigate = useNavigate();
     // Hàm xử lý đăng nhập
     const handleLogin = (e) => {

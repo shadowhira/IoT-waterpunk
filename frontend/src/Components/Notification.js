@@ -1,7 +1,7 @@
 import React from "react";
 import { List, ListItem, ListItemText, IconButton, Box } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { THEME_COLOR_BORDER } from './../Assets/Constants/constants';
+// import { THEME_COLOR_BORDER } from './../Assets/Constants/constants';
 
 const allNotifications = [];
 
@@ -68,7 +68,7 @@ function Notification({ notifications, onDelete }) {
                     marginBottom: "0.5rem", // Khoảng cách dưới nội dung primary
 
                   },
-                  
+
                 }}
               />
               {/* Nút xóa */}

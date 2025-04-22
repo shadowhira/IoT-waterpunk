@@ -7,9 +7,9 @@ import InfoIcon from "@mui/icons-material/Info";
 import ReceiptIcon from "@mui/icons-material/Receipt";
 import BarChartIcon from "@mui/icons-material/BarChart";
 import WarningIcon from "@mui/icons-material/Warning";
-import InvertColorsIcon from "@mui/icons-material/InvertColors";
-import ElectricBoltIcon from "@mui/icons-material/ElectricBolt";
-import DeviceThermostatIcon from "@mui/icons-material/DeviceThermostat";
+// import InvertColorsIcon from "@mui/icons-material/InvertColors";
+// import ElectricBoltIcon from "@mui/icons-material/ElectricBolt";
+// import DeviceThermostatIcon from "@mui/icons-material/DeviceThermostat";
 import SettingsIcon from "@mui/icons-material/Settings";
 import ItemNavbar from "./ItemNavbar";
 import SsidChartIcon from "@mui/icons-material/SsidChart";
@@ -41,16 +41,17 @@ function Navbar({ role }) {
     <Drawer
       variant="permanent"
       sx={{
-        width: drawerOpen ? 240 : 60,
+        width: drawerOpen ? { xs: 200, sm: 220, md: 240 } : { xs: 50, sm: 55, md: 60 },
         height: "100vh",
         flexShrink: 0,
         transition: "width 0.3s",
         "& .MuiDrawer-paper": {
-          width: drawerOpen ? 240 : 60,
+          width: drawerOpen ? { xs: 200, sm: 220, md: 240 } : { xs: 50, sm: 55, md: 60 },
           boxSizing: "border-box",
           transition: "width 0.3s",
         },
         animation: `${slideDown} 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) ${TIME_DELAY} both`,
+        zIndex: 1200, // Đảm bảo navbar luôn hiển thị trên các phần tử khác
       }}
       onTransitionEnd={handleTransitionEnd}
     >
@@ -77,8 +78,12 @@ function Navbar({ role }) {
         src={logoImage}
         alt="Logo"
         sx={{
-          width: "auto",
+          width: drawerOpen ? { xs: "80%", sm: "85%", md: "90%" } : { xs: "70%", sm: "75%", md: "80%" },
+          maxWidth: "200px",
+          margin: "0 auto",
+          display: "block",
           borderRadius: "50%",
+          padding: drawerOpen ? "10px" : "5px",
         }}
       />
       <List>

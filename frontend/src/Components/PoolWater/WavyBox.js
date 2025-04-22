@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { COLOR_WATER, HEIGHT_WAVY } from '../../Assets/Constants/constants';
 import { hexToRgba } from '../../Assets/Constants/utils';
 
@@ -10,7 +10,8 @@ const WavyBox = ({ width }) => {
     const amplitudeSpeed = 0.05; // Tốc độ thay đổi biên độ
 
     // Hàm tạo sóng hình sin với biên độ thay đổi theo vị trí x
-    const generateWavePath = (time) => {
+    // Sử dụng useCallback để tránh tạo hàm mới mỗi khi render
+    const generateWavePath = useCallback((time) => {
         const points = [];
         for (let x = 0; x <= width; x += 10) {
             // Biên độ thay đổi theo x để tạo hiệu ứng uốn lượn
@@ -27,7 +28,7 @@ const WavyBox = ({ width }) => {
         // Căn giữa sóng theo chiều ngang
         const offsetX = (width - (width / wavelength) * wavelength) / 2;
         return `M${points[0]} ` + points.slice(1).map((p) => `L${offsetX + p}`).join(' ') + ` V${HEIGHT_WAVY} H0 Z`;
-    };
+    }, [width, baseAmplitude, amplitudeVariation, wavelength, speed, amplitudeSpeed, HEIGHT_WAVY]);
 
     const [wavePath, setWavePath] = useState(generateWavePath(0));
     const [wavePathBehind, setWavePathBehind] = useState(generateWavePath(0)); // Sóng phía sau
@@ -46,7 +47,7 @@ const WavyBox = ({ width }) => {
         animationFrameId = requestAnimationFrame(animateWave);
 
         return () => cancelAnimationFrame(animationFrameId); // Dọn dẹp interval khi component bị unmount
-    }, [width]);
+    }, [generateWavePath]); // Chỉ cần phụ thuộc vào generateWavePath vì nó đã phụ thuộc vào width
 
     return (
         <div style={{ position: 'absolute', width: `${width}px`, top: '-10px' }}>
@@ -59,7 +60,7 @@ const WavyBox = ({ width }) => {
                     top: `${-HEIGHT_WAVY / 2 - 8}`,
                     left: 0,
                     zIndex: 5, // Sóng phía sau
-                
+
                 }}
             >
                 <path

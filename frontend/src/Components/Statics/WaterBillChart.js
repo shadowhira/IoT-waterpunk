@@ -31,7 +31,7 @@ const WaterBillChart = () => {
   const [startMonth, setStartMonth] = useState("");
   const [endMonth, setEndMonth] = useState("");
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error] = useState(null);
 
   useEffect(() => {
     fetchDataFake();
@@ -111,13 +111,25 @@ const WaterBillChart = () => {
           height: "100%",
         }}
       >
-        <Box sx={{ marginBottom: "50px" }}>
+        <Box
+          sx={{
+            marginBottom: { xs: "30px", sm: "50px" },
+            display: "flex",
+            flexDirection: { xs: "column", sm: "row" }, // Chuyển sang layout dọc trên màn hình nhỏ
+            gap: { xs: "15px", sm: "20px" }, // Khoảng cách giữa các input
+            width: "100%",
+            justifyContent: "center",
+            alignItems: "center"
+          }}
+        >
           <TextField
             label="Từ tháng"
             type="month"
             value={startMonth}
             onChange={handleStartMonthChange}
-            sx={{ marginRight: 2 }} // Space between inputs
+            sx={{
+              width: { xs: "90%", sm: "auto" } // Chiều rộng 90% trên màn hình nhỏ
+            }}
             InputLabelProps={{
               shrink: true,
             }}
@@ -128,16 +140,41 @@ const WaterBillChart = () => {
             type="month"
             value={endMonth}
             onChange={handleEndMonthChange}
+            sx={{
+              width: { xs: "90%", sm: "auto" } // Chiều rộng 90% trên màn hình nhỏ
+            }}
             InputLabelProps={{
               shrink: true,
             }}
             variant="outlined"
           />
         </Box>
-        <Box style={{ width: "90%", height: "70%" }}>
+        <Box
+          sx={{
+            width: { xs: "95%", sm: "90%" },
+            height: { xs: "50vh", sm: "60vh", md: "70%" },
+            margin: "0 auto"
+          }}
+        >
           <Bar
             data={chartData}
-            options={{ responsive: true, maintainAspectRatio: false }}
+            options={{
+              responsive: true,
+              maintainAspectRatio: false,
+              scales: {
+                x: {
+                  ticks: {
+                    // Hiển thị nhãn trục x phù hợp với kích thước màn hình
+                    maxRotation: 90, // Xoay nhãn 90 độ trên màn hình nhỏ
+                    autoSkip: true,
+                    autoSkipPadding: 10,
+                    font: {
+                      size: 10 // Kích thước font nhỏ hơn
+                    }
+                  }
+                }
+              }
+            }}
           />
         </Box>
       </Box>

@@ -8,7 +8,6 @@ import {
   TableRow,
   Paper,
   TableSortLabel,
-  Typography,
 } from "@mui/material";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
@@ -20,7 +19,7 @@ import {
   TIME_DELAY_TABLE,
   TRANSITION_TABLE,
 } from "../../Assets/Constants/constants";
-import { createTableAnimation, hexToRgba } from "../../Assets/Constants/utils";
+import { createTableAnimation } from "../../Assets/Constants/utils";
 import Heading from "../Heading/Heading";
 import {
   addTopicListener,
@@ -116,7 +115,7 @@ function ECDataTable() {
   const slideDown = createTableAnimation(TRANSITION_TABLE);
 
   return (
-    <div style={{ textAlign: "center" }}>
+    <div style={{ textAlign: "center", width: "100%", overflowX: "hidden" }}>
       <Heading
         text="Dữ liệu EC"
         margin={MARGIN_HEADING}
@@ -125,13 +124,15 @@ function ECDataTable() {
       <TableContainer
         component={Paper}
         sx={{
-          width: "80vh",
-          height: "70vh",
+          width: { xs: "95%", sm: "90%", md: "80%", lg: "70%" }, // Sử dụng đơn vị phần trăm thay vì vh
+          height: { xs: "60vh", sm: "65vh", md: "70vh" }, // Điều chỉnh chiều cao theo kích thước màn hình
           margin: "auto",
           borderRadius: BORDER_RADIUS_SMALL,
           border: `3px solid ${THEME_COLOR_BORDER}`,
           boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.2)",
           animation: `${slideDown} 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) ${TIME_DELAY_TABLE} both`,
+          overflowX: "auto", // Cho phép cuộn ngang nếu bảng quá rộng
+          maxWidth: "100%", // Đảm bảo không vượt quá kích thước màn hình
         }}
       >
         <Table>

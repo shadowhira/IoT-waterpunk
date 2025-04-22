@@ -32,10 +32,12 @@ const WaterDataChart = () => {
   const [selectedDate, setSelectedDate] = useState("");
   const [loading, setLoading] = useState(true);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchDataFake();
   }, [selectedDate]);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const fetchDataFake = () => {
     const data = [];
     const selected = selectedDate ? new Date(selectedDate) : new Date();
@@ -118,22 +120,55 @@ const WaterDataChart = () => {
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
-          mb: 3,
+          mb: { xs: 2, sm: 3 },
+          flexDirection: { xs: "column", sm: "row" },
+          gap: { xs: "10px", sm: "0" }
         }}
       >
         <TextField
-          label="Select Date"
+          label="Chọn ngày"
           type="date"
           value={selectedDate}
           onChange={handleDateChange}
           InputLabelProps={{ shrink: true }}
-          sx={{ mr: 2 }}
+          sx={{
+            width: { xs: "90%", sm: "auto" },
+            mr: { xs: 0, sm: 2 }
+          }}
         />
       </Box>
-      <Box sx={{ width: "90%", height: "80%", mx: "auto" }}>
+      <Box
+        sx={{
+          width: { xs: "95%", sm: "90%" },
+          height: { xs: "50vh", sm: "60vh", md: "80%" },
+          mx: "auto"
+        }}
+      >
         <Line
           data={chartData}
-          options={{ responsive: true, maintainAspectRatio: false }}
+          options={{
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              x: {
+                ticks: {
+                  maxRotation: 90,
+                  autoSkip: true,
+                  autoSkipPadding: 10,
+                  font: {
+                    size: { xs: 8, sm: 10, md: 12 }
+                  }
+                }
+              },
+              y: {
+                ticks: {
+                  font: {
+                    size: { xs: 8, sm: 10, md: 12 }
+                  }
+                }
+              }
+            }
+          }}
         />
       </Box>
     </Box>

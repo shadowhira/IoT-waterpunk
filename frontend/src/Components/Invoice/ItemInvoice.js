@@ -20,7 +20,6 @@ const ItemInvoice = ({ item, onPay, delay }) => {
                 onClick={handleOpenModal}
                 sx={{
                     mb: 3,
-                    border: 1,
                     width: "70%",
                     borderRadius: BORDER_RADIUS_SMALL,
                     border: `3px solid ${THEME_COLOR_BORDER}`,

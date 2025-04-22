@@ -3,11 +3,8 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Login from './Components/Authen/Login/Login'; // Đường dẫn đến file Login.js
 import Register from './Components/Authen/Register/Register'; // Đường dẫn đến file Register.js
 import Dashboard from './Components/Dashboard';
-import socket, { sendMessage } from './Socket/WebSocketService'; // Import hàm gửi tin nhắn từ WebSocketService
-import AdminDashboard from './Components/AdminDashboard';
 import {
   connectWebSocket,
-  disconnectWebSocket,
   isWebSocketConnected
 } from './Socket/WebSocketService';
 
@@ -24,7 +21,7 @@ function App() {
       connectWebSocket();
     }
     // Kết nối WebSocket
-    
+
     // Dọn dẹp khi component unmount
     return () => {
       // disconnectWebSocket();

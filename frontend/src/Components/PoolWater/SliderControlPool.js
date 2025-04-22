@@ -25,7 +25,7 @@ const SliderControlPool = () => {
       valueLabelFormat={(value) => `${value}%`} // Định dạng giá trị hiển thị
       onChangeCommitted={handleSliderChangeCommitted} // Gọi hàm khi thả chuột
       sx={{
-        width: "80%",
+        width: { xs: "90%", sm: "85%", md: "80%" },
         color: `${COLOR_SLIDER}`, // Màu chính của slider
         "& .MuiSlider-thumb": {
           backgroundColor: `${COLOR_SLIDER}`, // Màu cho nút tròn
@@ -33,21 +33,21 @@ const SliderControlPool = () => {
           "&:hover, &.Mui-focusVisible": {
             boxShadow: `0px 0px 0px 8px ${hexToRgba(COLOR_SLIDER, 0.1)}`, // Hiệu ứng khi hover hoặc focus
           },
-          height: heightSlider * 2,
-          width: heightSlider * 2,
+          height: { xs: heightSlider * 1.5, sm: heightSlider * 1.8, md: heightSlider * 2 },
+          width: { xs: heightSlider * 1.5, sm: heightSlider * 1.8, md: heightSlider * 2 },
         },
         "& .MuiSlider-rail": {
           backgroundColor: "#ADD8E6", // Màu nền slider
-          height: heightSlider,
+          height: { xs: heightSlider * 0.8, sm: heightSlider * 0.9, md: heightSlider },
         },
         "& .MuiSlider-track": {
           backgroundColor: `${COLOR_SLIDER}`, // Màu đường track slider
-          height: heightSlider,
+          height: { xs: heightSlider * 0.8, sm: heightSlider * 0.9, md: heightSlider },
         },
         "& .MuiSlider-valueLabel": {
           backgroundColor: `${COLOR_SLIDER}`, // Màu nhãn hiển thị giá trị
           color: "#fff", // Màu chữ trong nhãn
-          fontSize: "20px",
+          fontSize: { xs: "16px", sm: "18px", md: "20px" },
           fontWeight: "bold",
         },
       }}

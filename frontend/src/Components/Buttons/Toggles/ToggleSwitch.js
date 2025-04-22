@@ -10,10 +10,10 @@ function ToggleSwitch() {
   // State quản lý giá trị ON/OFF
   const [isActive, setIsActive] = useState(false); // true: ON, false: OFF
 
-  // Hàm chuyển trạng thái
-  const toggleActive = () => {
-    setIsActive(!isActive); // Đảo trạng thái hiện tại
-  };
+  // Hàm chuyển trạng thái - hiện tại không sử dụng
+  // const toggleActive = () => {
+  //   setIsActive(!isActive); // Đảo trạng thái hiện tại
+  // };
 
   // useEffect(() => {
   //     // Hàm thay đổi trạng thái cứ mỗi 1 giây

@@ -1,8 +1,6 @@
 import React, { useState } from "react";
 import "./ToggleGroupThree.css";
 import "../../Assets/CSS/style.css";
-import socket from "../../Socket/WebSocketService";
-import axios from "axios";
 
 function ToggleGroupThree() {
   // State để lưu trạng thái hiện tại, mặc định là "auto"

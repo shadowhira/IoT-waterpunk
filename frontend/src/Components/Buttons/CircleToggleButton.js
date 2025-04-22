@@ -1,5 +1,4 @@
-import React, { useState } from 'react';
-import { ToggleButton, ToggleButtonGroup, styled } from '@mui/material';
+import { ToggleButton, styled } from '@mui/material';
 
 const CircleToggleButton = styled(ToggleButton)(({ theme, active }) => ({
     width: 50,            // Đặt kích thước chiều rộng

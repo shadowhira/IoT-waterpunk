@@ -2,10 +2,7 @@ import React, { useEffect, useState } from "react";
 import {
   Box,
   Typography,
-  ToggleButtonGroup,
-  ToggleButton,
 } from "@mui/material";
-import Footer from "./Footer";
 import {
   BORDER_RADIUS_BIG,
   BORDER_RADIUS_MEDIUM,
@@ -13,19 +10,15 @@ import {
   HEIGHT_FOOTER,
   HEIGHT_USERINFO,
   MARGIN_HEADING,
-  THEME_COLOR_BACKGROUND,
   THEME_COLOR_BORDER,
 } from "../Assets/Constants/constants";
-import AdminInfo from "./AdminInfo";
 import {
   createItemInvoiceAnimation,
   hexToRgba,
 } from "../Assets/Constants/utils";
 import logoImage from "../Assets/Images/logo.png"; // Đường dẫn ảnh logo
-import CircleToggleButton from "./Buttons/CircleToggleButton";
 import ToggleSwitch from "./Buttons/Toggles/ToggleSwitch";
 import ToggleGroupThree from "./Buttons/ToggleGroupThree";
-import WavyBox from "./PoolWater/WavyBox";
 import Pool from "./PoolWater/Pool";
 import SliderControlPool from "./PoolWater/SliderControlPool";
 import {
@@ -35,8 +28,8 @@ import {
 function AdminDashboard() {
   const slideLeft = createItemInvoiceAnimation("-100px");
   const slideRight = createItemInvoiceAnimation("100px");
-  // State để quản lý toggle đang bật (1, 2, 3)
-  const [activeToggle, setActiveToggle] = useState(1);
+  // State để quản lý ratio của pool
+  // const [activeToggle, setActiveToggle] = useState(1);
   const [ratio, setRatio] = useState(0);
   useEffect(() => {
     // WebSocket data handler
@@ -66,22 +59,25 @@ function AdminDashboard() {
     };
   }, []); // Empty dependency array ensures this runs once on mount
 
-  // Hàm xử lý sự kiện thay đổi toggle
-  const handleToggle = (event, newToggle) => {
-    // Nếu chọn một giá trị hợp lệ thì cập nhật state
-    if (newToggle !== null) {
-      setActiveToggle(newToggle);
-    }
-  };
+  // Hàm xử lý sự kiện thay đổi toggle - hiện tại không sử dụng
+  // const handleToggle = (event, newToggle) => {
+  //   // Nếu chọn một giá trị hợp lệ thì cập nhật state
+  //   if (newToggle !== null) {
+  //     setActiveToggle(newToggle);
+  //   }
+  // };
   return (
     <Box
       sx={{
         height: `calc(100vh - (${HEIGHT_USERINFO}px + ${HEIGHT_FOOTER}px + ${MARGIN_HEADING}px))`,
         marginTop: MARGIN_HEADING / 8,
         display: "flex",
+        flexDirection: { xs: "column", md: "row" },
         alignItems: "center",
-        marginRight: "50px",
-        marginLeft: "50px",
+        marginRight: { xs: "10px", sm: "30px", md: "50px" },
+        marginLeft: { xs: "10px", sm: "30px", md: "50px" },
+        overflowY: { xs: "auto", md: "hidden" },
+        overflowX: "hidden",
       }}
     >
       <Box
@@ -101,9 +97,10 @@ function AdminDashboard() {
             display: "flex",
             justifyContent: "center",
             maxWidth: "900px",
-            minWidth: "800px",
-            width: "80%",
-            height: "80%",
+            minWidth: { xs: "300px", sm: "500px", md: "800px" },
+            width: { xs: "95%", sm: "90%", md: "80%" },
+            height: { xs: "auto", md: "80%" },
+            flexDirection: { xs: "column", md: "row" },
           }}
         >
           <Box

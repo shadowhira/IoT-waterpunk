@@ -8,7 +8,6 @@ import {
 } from "../../Assets/Constants/constants";
 import ItemInvoice from "./ItemInvoice";
 import Heading from "../Heading/Heading";
-import { Navigate, useNavigate } from "react-router-dom";
 
 const initialData = [
   { id: 1, date: "2024-11-01", waterBill: 150000, status: "Hoàn Thành" },
@@ -24,7 +23,7 @@ const initialData = [
 ];
 
 function InvoiceTable() {
-  const navigate = useNavigate();
+  // const navigate = useNavigate(); // Hiện tại không sử dụng
   const [data, setData] = useState(initialData);
   const [currentPage, setCurrentPage] = useState(1);
   const [notification, setNotification] = useState({

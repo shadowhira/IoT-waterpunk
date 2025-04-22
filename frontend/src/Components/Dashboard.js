@@ -1,13 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import Welcome from './Welcome';
 import { Box } from '@mui/material';
 import { Routes, Route } from 'react-router-dom';
 import Navbar from './Navbar/Navbar';
 import UserInfo from './UserInfo';
-import TurbidityTable from './DataWater/TurbidityTable';
-import TemperatureTable from './DataWater/TemperatureTable';
 import ECDataTable from './DataWater/ECDataTable';
-import RelayDataTable from './DataWater/RelayDataTable';
 import InvoiceTable from './Invoice/InvoiceTable';
 import WaterBillChart from './Statics/WaterBillChart';
 import WaterDataChart from './Statics/WaterDataChart';
@@ -15,7 +12,6 @@ import WarningComponent from './Warning/WarningComponent';
 import SystemConfig from './Config/SystemConfig';
 import Footer from './Footer';
 import { HEIGHT_FOOTER, HEIGHT_USERINFO, MARGIN_HEADING } from '../Assets/Constants/constants';
-import { css } from '@emotion/react';
 import AdminInfo from './AdminInfo';
 import AdminDashboard from './AdminDashboard';
 import { Navigate } from 'react-router-dom';
@@ -28,13 +24,22 @@ function Dashboard({ user, role }) {
     }, []);
 
     return (
-        <Box display="flex" sx={{ position: "relative", margin: '0px' }}>
-            <Navbar role = {role}/>
+        <Box
+            display="flex"
+            sx={{
+                position: "relative",
+                margin: '0px',
+                flexDirection: { xs: 'column', sm: 'row' } // Chuyển sang layout dọc trên màn hình nhỏ
+            }}
+        >
+            <Navbar role={role}/>
             <Box
                 flex={1}
                 sx={{
-                    height: '100vh',
+                    height: { xs: 'auto', sm: '100vh' }, // Chiều cao tự động trên màn hình nhỏ
                     position: 'relative',
+                    width: { xs: '100%', sm: 'auto' }, // Chiều rộng 100% trên màn hình nhỏ
+                    overflow: 'auto' // Cho phép cuộn nếu nội dung quá dài
                 }}
             >
                 {role === "user" && (
@@ -50,10 +55,15 @@ function Dashboard({ user, role }) {
                 {/* Main content area for routing */}
                 <Box
                     sx={{
-                        height: `calc(100vh - (${HEIGHT_USERINFO}px + ${HEIGHT_FOOTER}px + ${MARGIN_HEADING}px))`,
+                        height: {
+                            xs: 'auto', // Chiều cao tự động trên màn hình nhỏ
+                            sm: `calc(100vh - (${HEIGHT_USERINFO}px + ${HEIGHT_FOOTER}px + ${MARGIN_HEADING}px))`
+                        },
                         position: 'relative',
-                        // overflow: 'hidden' // Container has hidden overflow
-                        marginBottom: '200px',
+                        marginBottom: { xs: '100px', sm: '200px' },
+                        padding: { xs: '10px', sm: '0' }, // Thêm padding trên màn hình nhỏ
+                        minHeight: '300px', // Đảm bảo có chiều cao tối thiểu
+                        overflow: 'auto' // Cho phép cuộn nếu nội dung quá dài
                     }}
                 >
                     <Routes>
