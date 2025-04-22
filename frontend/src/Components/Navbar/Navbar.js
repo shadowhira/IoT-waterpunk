@@ -10,6 +10,7 @@ import WarningIcon from "@mui/icons-material/Warning";
 import InvertColorsIcon from "@mui/icons-material/InvertColors";
 import ElectricBoltIcon from "@mui/icons-material/ElectricBolt";
 import DeviceThermostatIcon from "@mui/icons-material/DeviceThermostat";
+import SettingsIcon from "@mui/icons-material/Settings";
 import ItemNavbar from "./ItemNavbar";
 import SsidChartIcon from "@mui/icons-material/SsidChart";
 import EqualizerIcon from "@mui/icons-material/Equalizer";
@@ -134,7 +135,7 @@ function Navbar({ role }) {
             },
           ]}
         />
-        {/* <ItemNavbar
+        <ItemNavbar
           icon={<WarningIcon />}
           label="Xem cảnh báo"
           route={`/${parent}/xem-canh-bao`}
@@ -142,7 +143,16 @@ function Navbar({ role }) {
           showText={showText}
           isSelected={selectedItem === `/${parent}/xem-canh-bao`}
           onSelect={() => setSelectedItem(`/${parent}/xem-canh-bao`)}
-        /> */}
+        />
+        <ItemNavbar
+          icon={<SettingsIcon />}
+          label="Cấu hình hệ thống"
+          route={`/${parent}/cau-hinh`}
+          drawerOpen={drawerOpen}
+          showText={showText}
+          isSelected={selectedItem === `/${parent}/cau-hinh`}
+          onSelect={() => setSelectedItem(`/${parent}/cau-hinh`)}
+        />
       </List>
     </Drawer>
   );

@@ -12,14 +12,21 @@ import InvoiceTable from './Invoice/InvoiceTable';
 import WaterBillChart from './Statics/WaterBillChart';
 import WaterDataChart from './Statics/WaterDataChart';
 import WarningComponent from './Warning/WarningComponent';
+import SystemConfig from './Config/SystemConfig';
 import Footer from './Footer';
 import { HEIGHT_FOOTER, HEIGHT_USERINFO, MARGIN_HEADING } from '../Assets/Constants/constants';
 import { css } from '@emotion/react';
 import AdminInfo from './AdminInfo';
 import AdminDashboard from './AdminDashboard';
 import { Navigate } from 'react-router-dom';
+import { connectWebSocket } from '../Socket/WebSocketService';
 
 function Dashboard({ user, role }) {
+    // Kết nối WebSocket khi component được tạo
+    useEffect(() => {
+        connectWebSocket();
+    }, []);
+
     return (
         <Box display="flex" sx={{ position: "relative", margin: '0px' }}>
             <Navbar role = {role}/>
@@ -45,6 +52,8 @@ function Dashboard({ user, role }) {
                     sx={{
                         height: `calc(100vh - (${HEIGHT_USERINFO}px + ${HEIGHT_FOOTER}px + ${MARGIN_HEADING}px))`,
                         position: 'relative',
+                        // overflow: 'hidden' // Container has hidden overflow
+                        marginBottom: '200px',
                     }}
                 >
                     <Routes>
@@ -71,6 +80,7 @@ function Dashboard({ user, role }) {
                         <Route path="/thong-ke/tien-nuoc" element={<WaterBillChart />} />
                         <Route path="/thong-ke/du-lieu-nuoc" element={<WaterDataChart />} />
                         <Route path="/xem-canh-bao" element={<WarningComponent />} />
+                        <Route path="/cau-hinh" element={<SystemConfig />} />
                     </Routes>
                 </Box>
                 <Footer />
