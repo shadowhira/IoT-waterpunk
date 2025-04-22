@@ -30,29 +30,34 @@ const Pool = ({ ratio }) => {
 
     // Cập nhật tỷ lệ hiển thị (dần dần)
     const targetRatio = Math.round(validRatio * 100); // Tỷ lệ mục tiêu
-    const stepCount = Math.abs(targetRatio - displayedRatio); // Số bước tăng giá trị hiển thị (mượt mà hơn)
 
-    if (stepCount === 0) return;
+    // Đặt trực tiếp giá trị hiển thị để đồng bộ với dữ liệu từ simulator
+    setDisplayedRatio(targetRatio);
 
-    const stepDuration = transitionDuration / stepCount; // Thời gian mỗi bước
-    const stepValue = (targetRatio - displayedRatio) / stepCount; // Giá trị tăng mỗi bước
-
-    let currentRatio = displayedRatio;
-    let stepIndex = 0;
-
-    const intervalId = setInterval(() => {
-      stepIndex++;
-      currentRatio += stepValue;
-      setDisplayedRatio(Math.round(currentRatio));
-
-      if (stepIndex >= stepCount) {
-        clearInterval(intervalId); // Dừng interval khi hoàn thành
-        setDisplayedRatio(targetRatio); // Đảm bảo đạt đúng giá trị cuối
-      }
-    }, stepDuration);
-
-    return () => clearInterval(intervalId); // Cleanup interval khi component unmount
-  }, [ratio, displayedRatio, transitionDuration]); // Chỉ giữ lại các dependencies cần thiết
+    // Phần code animation dưới đây được comment lại vì gây ra sự không đồng bộ
+    // const stepCount = Math.abs(targetRatio - displayedRatio); // Số bước tăng giá trị hiển thị (mượt mà hơn)
+    //
+    // if (stepCount === 0) return;
+    //
+    // const stepDuration = transitionDuration / stepCount; // Thời gian mỗi bước
+    // const stepValue = (targetRatio - displayedRatio) / stepCount; // Giá trị tăng mỗi bước
+    //
+    // let currentRatio = displayedRatio;
+    // let stepIndex = 0;
+    //
+    // const intervalId = setInterval(() => {
+    //   stepIndex++;
+    //   currentRatio += stepValue;
+    //   setDisplayedRatio(Math.round(currentRatio));
+    //
+    //   if (stepIndex >= stepCount) {
+    //     clearInterval(intervalId); // Dừng interval khi hoàn thành
+    //     setDisplayedRatio(targetRatio); // Đảm bảo đạt đúng giá trị cuối
+    //   }
+    // }, stepDuration);
+    //
+    // return () => clearInterval(intervalId); // Cleanup interval khi component unmount
+  }, [ratio]); // Chỉ phụ thuộc vào ratio
 
   return (
     <div className="card-wrap">

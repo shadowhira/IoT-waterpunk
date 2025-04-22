@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Typography, Button, Paper, Grid, Divider } from '@mui/material';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
-// import InfoIcon from '@mui/icons-material/Info';
+import InfoIcon from '@mui/icons-material/Info';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import WaterDropIcon from '@mui/icons-material/WaterDrop';
 import OpacityIcon from '@mui/icons-material/Opacity';

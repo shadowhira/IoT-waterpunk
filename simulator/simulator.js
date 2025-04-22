@@ -39,6 +39,13 @@ let systemState = {
   pumpStartTime: 0
 };
 
+// Cấu hình simulator
+let simulatorConfig = {
+  sendTestData: true, // Mặc định là gửi dữ liệu test
+  dataInterval: 10000, // Khoảng thời gian gửi dữ liệu (ms)
+  dataIntervalId: null // ID của interval, để có thể dừng nó sau này
+};
+
 // Kết nối MQTT
 const client = mqtt.connect(`${MQTT_SERVER}:${MQTT_PORT}`, {
   clientId: 'ESP32Simulator'
@@ -243,6 +250,11 @@ function checkForLeaks() {
   systemState.previousDistance = systemState.distance;
   systemState.previousFlowRate = systemState.flowRate;
 
+  // Kiểm tra sự thay đổi lưu lượng bất thường (chỉ để sử dụng biến prevFlowRate)
+  if (systemState.pumpState === 0 && prevFlowRate > 0 && Math.abs(systemState.flowRate - prevFlowRate) > systemConfig.flow_threshold) {
+    console.log(`Lưu lượng thay đổi bất thường: ${prevFlowRate} -> ${systemState.flowRate} L/phút`);
+  }
+
   // Kiểm tra rò rỉ mực nước
   if (systemState.pumpState === 0 && prevDistance > 0) {
     const distanceChange = systemState.distance - prevDistance;
@@ -331,9 +343,13 @@ function handleAutomaticControl(currentLevelPercent) {
 
 // Bắt đầu gửi dữ liệu cảm biến
 function startSendingData() {
-  // Gửi dữ liệu mỗi 10 giây (tăng từ 5 giây lên 10 giây)
-  console.log('Bắt đầu gửi dữ liệu cảm biến mỗi 10 giây...');
-  setInterval(sendSensorData, 10000);
+  if (simulatorConfig.sendTestData) {
+    console.log(`Bắt đầu gửi dữ liệu cảm biến mỗi ${simulatorConfig.dataInterval/1000} giây...`);
+    // Lưu ID của interval để có thể dừng nó sau này
+    simulatorConfig.dataIntervalId = setInterval(sendSensorData, simulatorConfig.dataInterval);
+  } else {
+    console.log('Chế độ gửi dữ liệu test đã bị tắt. Chỉ nhận dữ liệu từ phần cứng thực.');
+  }
 }
 
 // Hiển thị menu
@@ -353,6 +369,9 @@ function showMenu() {
   console.log('11. TẮT máy bơm (chế độ thủ công)');
   console.log('12. Chế độ TỰ ĐỘNG');
   console.log('13. Đặt lại cảnh báo rò rỉ');
+  console.log('------ Cấu hình Simulator ------');
+  console.log(`14. ${simulatorConfig.sendTestData ? 'TẮT' : 'BẬT'} gửi dữ liệu test (hiện tại: ${simulatorConfig.sendTestData ? 'BẬT' : 'TẮT'})`);
+  console.log('15. Thay đổi khoảng thời gian gửi dữ liệu');
   console.log('0. Thoát');
   console.log('===============================');
 
@@ -410,7 +429,8 @@ function handleMenuOption(option) {
       showMenu();
       break;
     case '9':
-      console.log('Cấu hình hiện tại:', systemConfig);
+      console.log('Cấu hình hệ thống hiện tại:', systemConfig);
+      showSimulatorConfig(); // Hiển thị cấu hình simulator
       showMenu();
       break;
     case '10': // BẬT máy bơm
@@ -428,6 +448,16 @@ function handleMenuOption(option) {
     case '13': // Đặt lại cảnh báo rò rỉ
       resetLeakAlert();
       showMenu();
+      break;
+    case '14': // Bật/tắt gửi dữ liệu test
+      toggleSendTestData();
+      showMenu();
+      break;
+    case '15': // Thay đổi khoảng thời gian gửi dữ liệu
+      rl.question('Nhập khoảng thời gian gửi dữ liệu mới (giây): ', (interval) => {
+        changeDataInterval(parseFloat(interval));
+        showMenu();
+      });
       break;
     case '0':
       console.log('Đang thoát...');
@@ -600,9 +630,62 @@ function getControlModeName(mode) {
   }
 }
 
+// Bật/tắt gửi dữ liệu test
+function toggleSendTestData() {
+  simulatorConfig.sendTestData = !simulatorConfig.sendTestData;
+
+  if (simulatorConfig.sendTestData) {
+    console.log('\nĐã BẬT chế độ gửi dữ liệu test');
+    // Nếu đang không có interval đang chạy, bắt đầu gửi dữ liệu
+    if (!simulatorConfig.dataIntervalId) {
+      console.log(`Bắt đầu gửi dữ liệu cảm biến mỗi ${simulatorConfig.dataInterval/1000} giây...`);
+      simulatorConfig.dataIntervalId = setInterval(sendSensorData, simulatorConfig.dataInterval);
+    }
+  } else {
+    console.log('\nĐã TẮT chế độ gửi dữ liệu test. Chỉ nhận dữ liệu từ phần cứng thực.');
+    // Nếu có interval đang chạy, dừng nó lại
+    if (simulatorConfig.dataIntervalId) {
+      clearInterval(simulatorConfig.dataIntervalId);
+      simulatorConfig.dataIntervalId = null;
+    }
+  }
+}
+
+// Thay đổi khoảng thời gian gửi dữ liệu
+function changeDataInterval(seconds) {
+  if (isNaN(seconds) || seconds <= 0) {
+    console.log('\nKhoảng thời gian không hợp lệ. Vui lòng nhập một số dương.');
+    return;
+  }
+
+  // Chuyển đổi giây sang mili giây
+  const interval = seconds * 1000;
+  simulatorConfig.dataInterval = interval;
+
+  console.log(`\nĐã thay đổi khoảng thời gian gửi dữ liệu thành ${seconds} giây`);
+
+  // Nếu đang gửi dữ liệu test, cập nhật interval
+  if (simulatorConfig.sendTestData && simulatorConfig.dataIntervalId) {
+    clearInterval(simulatorConfig.dataIntervalId);
+    simulatorConfig.dataIntervalId = setInterval(sendSensorData, interval);
+    console.log(`Đã cập nhật khoảng thời gian gửi dữ liệu.`);
+  }
+}
+
+// Hiển thị cấu hình simulator
+function showSimulatorConfig() {
+  console.log('\nCấu hình Simulator:');
+  console.log(`- Gửi dữ liệu test: ${simulatorConfig.sendTestData ? 'BẬT' : 'TẮT'}`);
+  console.log(`- Khoảng thời gian gửi dữ liệu: ${simulatorConfig.dataInterval/1000} giây`);
+}
+
 // Xử lý đóng kết nối
 process.on('SIGINT', () => {
   console.log('Đang đóng kết nối...');
+  // Dừng interval nếu đang chạy
+  if (simulatorConfig.dataIntervalId) {
+    clearInterval(simulatorConfig.dataIntervalId);
+  }
   client.end();
   rl.close();
   process.exit(0);

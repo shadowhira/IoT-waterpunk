@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import Welcome from './Welcome';
-import { Box, useMediaQuery, useTheme } from '@mui/material';
+import { Box } from '@mui/material';
 import { Routes, Route } from 'react-router-dom';
 import Navbar from './Navbar/Navbar';
 import UserInfo from './UserInfo';
@@ -24,17 +24,13 @@ function Dashboard({ user, role }) {
         connectWebSocket();
     }, []);
 
-    const theme = useTheme();
-    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-
     return (
         <Box
             display="flex"
             sx={{
                 position: "relative",
                 margin: '0px',
-                flexDirection: { xs: 'column', sm: 'row' }, // Chuyển sang layout dọc trên màn hình nhỏ
-                paddingTop: { xs: '56px', sm: '0' } // Thêm padding-top cho mobile để tránh bị AppBar che
+                flexDirection: { xs: 'column', sm: 'row' } // Chuyển sang layout dọc trên màn hình nhỏ
             }}
         >
             <Navbar role={role}/>
@@ -44,8 +40,7 @@ function Dashboard({ user, role }) {
                     height: { xs: 'auto', sm: '100vh' }, // Chiều cao tự động trên màn hình nhỏ
                     position: 'relative',
                     width: { xs: '100%', sm: 'auto' }, // Chiều rộng 100% trên màn hình nhỏ
-                    overflow: 'auto', // Cho phép cuộn nếu nội dung quá dài
-                    paddingBottom: { xs: '56px', sm: '0' } // Thêm padding-bottom cho mobile để tránh bị BottomNavigation che
+                    overflow: 'auto' // Cho phép cuộn nếu nội dung quá dài
                 }}
             >
                 {role === "user" && (
@@ -66,11 +61,10 @@ function Dashboard({ user, role }) {
                             sm: `calc(100vh - (${HEIGHT_USERINFO}px + ${HEIGHT_FOOTER}px + ${MARGIN_HEADING}px))`
                         },
                         position: 'relative',
-                        marginBottom: { xs: '70px', sm: '200px' },
-                        padding: { xs: '15px', sm: '20px' }, // Tăng padding để có khoảng cách tốt hơn
-                        minHeight: { xs: '250px', sm: '300px' }, // Điều chỉnh chiều cao tối thiểu cho mobile
-                        overflow: 'auto', // Cho phép cuộn nếu nội dung quá dài
-                        marginTop: { xs: '10px', sm: '0' } // Thêm margin-top cho mobile
+                        marginBottom: { xs: '100px', sm: '200px' },
+                        padding: { xs: '10px', sm: '0' }, // Thêm padding trên màn hình nhỏ
+                        minHeight: '300px', // Đảm bảo có chiều cao tối thiểu
+                        overflow: 'auto' // Cho phép cuộn nếu nội dung quá dài
                     }}
                 >
                     <Routes>
