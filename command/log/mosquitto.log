@@ -1,0 +1,2 @@
+1745286606: Received PUBLISH from ESP32Simulator (d0, q0, r0, m0, '/sensor/data', ... (123 bytes))
+1745286606: Sending PUBLISH to mqttjs_f90c13b8 (d0, q0, r0, m0, '/sensor/data', ... (123 bytes))
