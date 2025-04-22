@@ -10,20 +10,26 @@
 // LCD I2C
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
+// Định nghĩa địa chỉ EEPROM
+#define EEPROM_SIZE 512
+#define EEPROM_CONFIG_ADDR 0
+#define EEPROM_STATE_ADDR 200
+#define EEPROM_MAGIC_NUMBER 0xAB // Số ma thuật để kiểm tra tính hợp lệ của dữ liệu
+
 // WiFi thông tin
 // const char* ssid = "Phong701";
 // const char* password = "phong701";
-// const char* ssid = "Nguyen Van Tri";
-// const char* password = "26111952";
+const char* ssid = "Nguyen Van Tri";
+const char* password = "26111952";
 // const char* ssid = "Tang 4";
 // const char* password = "66666666";
-const char* ssid = "Tenda_189718";
-const char* password = "88888888";
+// const char* ssid = "Tenda_189718";
+// const char* password = "88888888";
 
 // MQTT thông tin
-// const char* mqttServer = "192.168.100.137"; // Home
+const char* mqttServer = "192.168.100.252"; // Home
 // const char* mqttServer = "192.168.0.103"; // Dat
-const char* mqttServer = "192.168.0.112"; // Bach
+// const char* mqttServer = "192.168.0.112"; // Bach
 
 const int mqttPort = 2403;
 const char* mqttDataTopic = "/sensor/data";
@@ -174,20 +180,25 @@ void callback(char* topic, byte* payload, unsigned int length) {
   }
 
   if (String(topic) == controlTopic) {
+    bool stateChanged = false;
+
     if (message == "on") {
       digitalWrite(pumpPin, HIGH);
       pumpState = true;
       controlMode = 1; // Chế độ bật thủ công
       manualControlStartTime = millis();
       pumpStartTime = millis(); // Ghi nhận thời điểm bắt đầu bơm
+      stateChanged = true;
     } else if (message == "off") {
       digitalWrite(pumpPin, LOW);
       pumpState = false;
       controlMode = 0; // Chế độ tắt thủ công
       manualControlStartTime = millis();
       pumpStartTime = 0; // Đặt lại thời gian bơm
+      stateChanged = true;
     } else if (message == "auto") {
       controlMode = 2; // Chế độ tự động
+      stateChanged = true;
     } else if (message == "reset_leak") {
       // Đặt lại cảnh báo rò rỉ
       leakDetected = false;
@@ -196,8 +207,17 @@ void callback(char* topic, byte* payload, unsigned int length) {
       String alertMsg = "{\"type\":\"leak_reset\",\"status\":\"ok\"}";
       client.publish(leakAlertTopic, alertMsg.c_str());
     }
+
+    // Lưu trạng thái vào EEPROM nếu có thay đổi
+    if (stateChanged) {
+      saveStateToEEPROM();
+    }
   } else if (String(topic) == levelTopic) {
-    desiredLevelPercent = message.toInt();
+    int newLevel = message.toInt();
+    if (newLevel != desiredLevelPercent) {
+      desiredLevelPercent = newLevel;
+      saveStateToEEPROM(); // Lưu mức nước mong muốn vào EEPROM
+    }
   } else if (String(topic) == configTopic) {
     // Xử lý cấu hình từ xa
     StaticJsonDocument<256> doc;
@@ -205,23 +225,36 @@ void callback(char* topic, byte* payload, unsigned int length) {
 
     if (!error) {
       // Cập nhật các tham số cấu hình
+      bool configChanged = false;
+
       if (doc.containsKey("tank_height")) {
         TANK_HEIGHT = doc["tank_height"];
+        configChanged = true;
       }
       if (doc.containsKey("max_temp")) {
         MAX_TEMP = doc["max_temp"];
+        configChanged = true;
       }
       if (doc.containsKey("max_tds")) {
         MAX_TDS = doc["max_tds"];
+        configChanged = true;
       }
       if (doc.containsKey("leak_threshold")) {
         LEAK_THRESHOLD = doc["leak_threshold"];
+        configChanged = true;
       }
       if (doc.containsKey("flow_threshold")) {
         FLOW_THRESHOLD = doc["flow_threshold"];
+        configChanged = true;
       }
       if (doc.containsKey("pump_timeout")) {
         PUMP_TIMEOUT = doc["pump_timeout"];
+        configChanged = true;
+      }
+
+      // Nếu có thay đổi cấu hình, lưu vào EEPROM
+      if (configChanged) {
+        saveConfigToEEPROM();
       }
 
       // Gửi lại cấu hình hiện tại
@@ -356,24 +389,34 @@ void handleSensorLogic() {
 
   // Chế độ tự động
   if (controlMode == 2) {
+    bool pumpStateChanged = false;
+
     if (temperatureC > MAX_TEMP || tdsValue > MAX_TDS || currentLevelPercent > 75) {
       if (pumpState) {
         digitalWrite(pumpPin, LOW);
         pumpState = false;
         pumpStartTime = 0; // Đặt lại thời gian bơm
+        pumpStateChanged = true;
       }
     } else if (currentLevelPercent < desiredLevelPercent) {
       if (!pumpState) {
         digitalWrite(pumpPin, HIGH);
         pumpState = true;
         pumpStartTime = millis(); // Ghi nhận thời điểm bắt đầu bơm
+        pumpStateChanged = true;
       }
     } else {
       if (pumpState) {
         digitalWrite(pumpPin, LOW);
         pumpState = false;
         pumpStartTime = 0; // Đặt lại thời gian bơm
+        pumpStateChanged = true;
       }
+    }
+
+    // Lưu trạng thái vào EEPROM nếu có thay đổi
+    if (pumpStateChanged) {
+      saveStateToEEPROM();
     }
   }
 }
@@ -434,11 +477,182 @@ void updateLCD() {
   }
 }
 
+// Cấu trúc dữ liệu cho cấu hình hệ thống
+struct SystemConfig {
+  byte magicNumber;       // Số ma thuật để kiểm tra tính hợp lệ
+  float tankHeight;       // Chiều cao bể nước
+  float maxTemp;          // Nhiệt độ tối đa
+  float maxTds;           // TDS tối đa
+  float leakThreshold;    // Ngưỡng rò rỉ mực nước
+  float flowThreshold;    // Ngưỡng rò rỉ lưu lượng
+  int pumpTimeout;        // Thời gian bơm tối đa
+  byte checksum;          // Checksum để kiểm tra tính toàn vẹn
+};
+
+// Cấu trúc dữ liệu cho trạng thái hệ thống
+struct SystemState {
+  byte magicNumber;       // Số ma thuật để kiểm tra tính hợp lệ
+  int controlMode;        // Chế độ điều khiển
+  bool pumpState;         // Trạng thái máy bơm
+  int desiredLevel;       // Mức nước mong muốn
+  byte checksum;          // Checksum để kiểm tra tính toàn vẹn
+};
+
+// Tính toán checksum đơn giản
+byte calculateChecksum(byte* data, int length) {
+  byte checksum = 0;
+  for (int i = 0; i < length; i++) {
+    checksum ^= data[i]; // XOR tất cả các byte
+  }
+  return checksum;
+}
+
+// Lưu cấu hình vào EEPROM
+void saveConfigToEEPROM() {
+  SystemConfig config;
+  config.magicNumber = EEPROM_MAGIC_NUMBER;
+  config.tankHeight = TANK_HEIGHT;
+  config.maxTemp = MAX_TEMP;
+  config.maxTds = MAX_TDS;
+  config.leakThreshold = LEAK_THRESHOLD;
+  config.flowThreshold = FLOW_THRESHOLD;
+  config.pumpTimeout = PUMP_TIMEOUT;
+
+  // Tính toán checksum
+  config.checksum = calculateChecksum((byte*)&config, sizeof(config) - 1);
+
+  // Lưu vào EEPROM
+  EEPROM.put(EEPROM_CONFIG_ADDR, config);
+  EEPROM.commit();
+  Serial.println("Đã lưu cấu hình vào EEPROM");
+}
+
+// Đọc cấu hình từ EEPROM
+bool loadConfigFromEEPROM() {
+  SystemConfig config;
+  EEPROM.get(EEPROM_CONFIG_ADDR, config);
+
+  // Kiểm tra tính hợp lệ của dữ liệu
+  if (config.magicNumber != EEPROM_MAGIC_NUMBER) {
+    Serial.println("Không tìm thấy cấu hình hợp lệ trong EEPROM");
+    return false;
+  }
+
+  // Kiểm tra checksum
+  byte storedChecksum = config.checksum;
+  config.checksum = 0;
+  byte calculatedChecksum = calculateChecksum((byte*)&config, sizeof(config) - 1);
+
+  if (storedChecksum != calculatedChecksum) {
+    Serial.println("Lỗi checksum khi đọc cấu hình từ EEPROM");
+    return false;
+  }
+
+  // Cập nhật cấu hình
+  TANK_HEIGHT = config.tankHeight;
+  MAX_TEMP = config.maxTemp;
+  MAX_TDS = config.maxTds;
+  LEAK_THRESHOLD = config.leakThreshold;
+  FLOW_THRESHOLD = config.flowThreshold;
+  PUMP_TIMEOUT = config.pumpTimeout;
+
+  Serial.println("Đã đọc cấu hình từ EEPROM thành công");
+  return true;
+}
+
+// Lưu trạng thái vào EEPROM
+void saveStateToEEPROM() {
+  SystemState state;
+  state.magicNumber = EEPROM_MAGIC_NUMBER;
+  state.controlMode = controlMode;
+  state.pumpState = pumpState;
+  state.desiredLevel = desiredLevelPercent;
+
+  // Tính toán checksum
+  state.checksum = calculateChecksum((byte*)&state, sizeof(state) - 1);
+
+  // Lưu vào EEPROM
+  EEPROM.put(EEPROM_STATE_ADDR, state);
+  EEPROM.commit();
+  Serial.println("Đã lưu trạng thái vào EEPROM");
+}
+
+// Đọc trạng thái từ EEPROM
+bool loadStateFromEEPROM() {
+  SystemState state;
+  EEPROM.get(EEPROM_STATE_ADDR, state);
+
+  // Kiểm tra tính hợp lệ của dữ liệu
+  if (state.magicNumber != EEPROM_MAGIC_NUMBER) {
+    Serial.println("Không tìm thấy trạng thái hợp lệ trong EEPROM");
+    return false;
+  }
+
+  // Kiểm tra checksum
+  byte storedChecksum = state.checksum;
+  state.checksum = 0;
+  byte calculatedChecksum = calculateChecksum((byte*)&state, sizeof(state) - 1);
+
+  if (storedChecksum != calculatedChecksum) {
+    Serial.println("Lỗi checksum khi đọc trạng thái từ EEPROM");
+    return false;
+  }
+
+  // Cập nhật trạng thái
+  controlMode = state.controlMode;
+  pumpState = state.pumpState;
+  desiredLevelPercent = state.desiredLevel;
+
+  // Cập nhật trạng thái máy bơm thực tế
+  digitalWrite(pumpPin, pumpState ? HIGH : LOW);
+
+  Serial.println("Đã đọc trạng thái từ EEPROM thành công");
+  return true;
+}
+
 void setup() {
   Serial.begin(115200);
 
   // Khởi tạo EEPROM
-  EEPROM.begin(512);
+  EEPROM.begin(EEPROM_SIZE);
+
+  // Khởi tạo các chân GPIO
+  pinMode(pumpPin, OUTPUT);
+  digitalWrite(pumpPin, LOW); // Mặc định tắt máy bơm
+
+  pinMode(FLOW_SENSOR_PIN, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(FLOW_SENSOR_PIN), pulseCounter, RISING);
+
+  pinMode(TRIG_PIN, OUTPUT);
+  pinMode(ECHO_PIN, INPUT);
+
+  // Khởi tạo cảm biến nhiệt độ
+  sensors.begin();
+
+  // Khởi tạo LCD
+  lcd.init();
+  lcd.backlight();
+
+  // Hiển thị thông báo khởi động
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("IoT Water System");
+  lcd.setCursor(0, 1);
+  lcd.print("Initializing...");
+
+  // Đọc cấu hình từ EEPROM
+  Serial.println("\n=== Đang đọc cấu hình từ EEPROM ===");
+  if (!loadConfigFromEEPROM()) {
+    Serial.println("Sử dụng cấu hình mặc định và lưu vào EEPROM");
+    saveConfigToEEPROM();
+  }
+
+  // Đọc trạng thái từ EEPROM
+  Serial.println("\n=== Đang đọc trạng thái từ EEPROM ===");
+  if (!loadStateFromEEPROM()) {
+    Serial.println("Sử dụng trạng thái mặc định và lưu vào EEPROM");
+    saveStateToEEPROM();
+  }
 
   // Khởi tạo các giá trị ban đầu cho phát hiện rò rỉ
   previousDistance = 0;
