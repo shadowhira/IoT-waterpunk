@@ -10,7 +10,11 @@ const MQTT_CONFIG = {
   port: 2403, // Port MQTT Broker
   topics: {
     sensorData: "/sensor/data",
-    // control: "/sensor/control",
+    control: "/sensor/control",
+    level: "/sensor/level",
+    config: "/sensor/config",
+    configStatus: "/sensor/config/status",
+    leakAlert: "/sensor/leak/alert"
   },
 };
 
@@ -35,19 +39,41 @@ client.on("connect", () => {
 
 // Lắng nghe dữ liệu từ topic
 client.on('message', (topic, message) => {
-  console.log(`Dữ liệu nhận được từ topic "${topic}": ${message.toString()}`);
-  const data = message.toString()
-  console.log('data: ', data);
-  if (global.wss) {
-    global.wss.clients.forEach((client) => {
-      if (client.readyState === 1) { // 1 = WebSocket.OPEN
-        client.send(JSON.stringify({ topic, data })); // Gửi dữ liệu đến client
-      }
-    });
-  }
+  // console.log(`Dữ liệu nhận được từ topic "${topic}": ${message.toString()}`);
+  const data = message.toString();
+  // console.log('data: ', data);
 
-  // Gọi hàm xử lý dữ liệu sensor
-  statsService.handleSensorData(data);
+  // Xử lý dữ liệu theo topic
+  switch (topic) {
+    case MQTT_CONFIG.topics.sensorData:
+      // Gửi dữ liệu đến clients qua WebSocket
+      if (global.wss) {
+        global.wss.clients.forEach((client) => {
+          if (client.readyState === 1) { // 1 = WebSocket.OPEN
+            client.send(JSON.stringify({ topic: 'sensor_data', data })); // Gửi dữ liệu đến client
+          }
+        });
+      }
+
+      // Gọi hàm xử lý dữ liệu sensor
+      statsService.handleSensorData(data);
+      break;
+
+    case MQTT_CONFIG.topics.configStatus:
+      // Xử lý cập nhật cấu hình
+      const configService = require('../services/config.service');
+      configService.handleConfigUpdate(data);
+      break;
+
+    case MQTT_CONFIG.topics.leakAlert:
+      // Xử lý cảnh báo rò rỉ
+      const alertService = require('../services/alert.service');
+      alertService.handleLeakAlert(data);
+      break;
+
+    default:
+      console.log(`Không có xử lý cho topic: ${topic}`);
+  }
 });
 
 // Xử lý lỗi kết nối

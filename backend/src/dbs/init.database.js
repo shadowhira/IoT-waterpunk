@@ -6,11 +6,13 @@ class Database{
     constructor(){
         this.connect();
     }
+
     connect(type = "mongodb"){
-        if(1==1){
-            mongoose.set("debug", true);
-            mongoose.set("debug", {color:true})
-        }
+        // Tắt debug log của Mongoose để tránh hiển thị quá nhiều thông tin
+        mongoose.set("debug", false);
+        // Chỉ bật debug khi cần
+        // mongoose.set("debug", {color:true})
+
         mongoose
             .connect(connectString, {maxPoolSize:50})
             .then((_)=>{
@@ -21,6 +23,7 @@ class Database{
                 console.log("Error:Fail Database Connection:", err);
             })
     }
+
     static getInstance(){
         if(!Database.instance){
             Database.instance = new Database()
@@ -28,5 +31,6 @@ class Database{
         return Database.instance
     }
 }
+
 const instanceDatabase = Database.getInstance()
 module.exports = instanceDatabase

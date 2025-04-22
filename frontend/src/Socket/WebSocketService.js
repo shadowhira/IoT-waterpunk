@@ -16,7 +16,7 @@ const connectWebSocket = () => {
         clearInterval(reconnectInterval); // Dừng cơ chế reconnect khi đã kết nối thành công
         reconnectInterval = null;
       }
-      socket.send(JSON.stringify({ message: "Xin chào từ FE!" }));
+      // socket.send(JSON.stringify({ message: "Xin chào từ FE!" }));
     };
 
     socket.onmessage = (event) => {

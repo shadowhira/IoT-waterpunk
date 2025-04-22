@@ -37,10 +37,100 @@ wss.on("connection", (ws) => {
 
   // Lắng nghe tin nhắn từ client
   ws.on("message", (message) => {
-    console.log("Received message from client:", message);
+    try {
+      console.log("Received message from client:", message.toString());
+      const data = JSON.parse(message.toString());
 
-    // Gửi phản hồi
-    ws.send(JSON.stringify({ serverResponse: "Message received" }));
+      // Xử lý tin nhắn theo topic
+      if (data.topic === 'config' && data.payload) {
+        // Xử lý cập nhật cấu hình
+        const systemService = require('./services/system.service');
+        systemService.updateConfig(data.payload)
+          .then(updatedConfig => {
+            console.log('Cấu hình đã được cập nhật:', updatedConfig);
+            // Gửi phản hồi thành công
+            ws.send(JSON.stringify({
+              topic: 'config_response',
+              payload: {
+                success: true,
+                message: 'Cấu hình đã được cập nhật thành công',
+                config: updatedConfig
+              }
+            }));
+          })
+          .catch(error => {
+            console.error('Lỗi khi cập nhật cấu hình:', error);
+            // Gửi phản hồi lỗi
+            ws.send(JSON.stringify({
+              topic: 'config_response',
+              payload: {
+                success: false,
+                message: 'Lỗi khi cập nhật cấu hình: ' + error.message
+              }
+            }));
+          });
+      } else if (data.topic === 'control' && data.payload) {
+        // Xử lý lệnh điều khiển máy bơm
+        const systemService = require('./services/system.service');
+        systemService.turnOnOff(data.payload, 'Lệnh từ WebSocket');
+
+        // Gửi phản hồi
+        ws.send(JSON.stringify({
+          topic: 'control_response',
+          payload: {
+            success: true,
+            message: 'Lệnh điều khiển đã được gửi',
+            command: data.payload
+          }
+        }));
+      } else if (data.topic === 'level' && data.payload) {
+        // Xử lý cập nhật mức nước mong muốn
+        const systemService = require('./services/system.service');
+        systemService.setWaterStorage(data.payload);
+
+        // Gửi phản hồi
+        ws.send(JSON.stringify({
+          topic: 'level_response',
+          payload: {
+            success: true,
+            message: 'Mức nước mong muốn đã được cập nhật',
+            level: data.payload
+          }
+        }));
+      } else if (data.topic === 'reset_leak' && data.payload) {
+        // Xử lý đặt lại cảnh báo rò rỉ
+        const systemService = require('./services/system.service');
+        systemService.resetLeak()
+          .then(result => {
+            // Gửi phản hồi
+            ws.send(JSON.stringify({
+              topic: 'reset_leak_response',
+              payload: {
+                success: true,
+                message: 'Lệnh đặt lại cảnh báo rò rỉ đã được gửi'
+              }
+            }));
+          });
+      } else {
+        // Gửi phản hồi cho các tin nhắn khác
+        ws.send(JSON.stringify({
+          topic: 'response',
+          payload: {
+            message: 'Tin nhắn đã được nhận',
+            originalTopic: data.topic || 'unknown'
+          }
+        }));
+      }
+    } catch (error) {
+      console.error('Lỗi khi xử lý tin nhắn WebSocket:', error);
+      // Gửi phản hồi lỗi
+      ws.send(JSON.stringify({
+        topic: 'error',
+        payload: {
+          message: 'Lỗi khi xử lý tin nhắn: ' + error.message
+        }
+      }));
+    }
   });
 
   // Lắng nghe khi kết nối đóng
