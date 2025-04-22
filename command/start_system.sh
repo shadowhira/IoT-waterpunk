@@ -60,6 +60,7 @@ case $choice in
         cd ../backend
         node server.js &
         BACKEND_PID=$!
+        cd "$OLDPWD"
         echo "✅ Backend đang chạy với PID: $BACKEND_PID"
         ;;
     2)
@@ -68,6 +69,7 @@ case $choice in
         cd ../simulator
         node simulator.js &
         SIMULATOR_PID=$!
+        cd "$OLDPWD"
         echo "✅ Simulator đang chạy với PID: $SIMULATOR_PID"
         ;;
     3)
@@ -76,12 +78,14 @@ case $choice in
         cd ../backend
         node server.js &
         BACKEND_PID=$!
+        cd "$OLDPWD"
         echo "✅ Backend đang chạy với PID: $BACKEND_PID"
-        
+
         echo "🚀 Đang khởi động Simulator..."
         cd ../simulator
         node simulator.js &
         SIMULATOR_PID=$!
+        cd "$OLDPWD"
         echo "✅ Simulator đang chạy với PID: $SIMULATOR_PID"
         ;;
     4)

@@ -22,12 +22,35 @@ echo "Mosquitto đang chạy với PID: $MOSQUITTO_PID"
 # Đợi Mosquitto khởi động
 sleep 2
 
-# Cập nhật file .env của backend
-sed -i '' "s/MQTT_BROKER_URL=.*/MQTT_BROKER_URL=$IP_ADDRESS/" ../backend/.env
+# Kiểm tra và cập nhật file .env của backend
+if [ -f "../backend/.env" ]; then
+    sed -i '' "s/MQTT_BROKER_URL=.*/MQTT_BROKER_URL=$IP_ADDRESS/" ../backend/.env
+    echo "Cập nhật file .env của backend thành công"
+else
+    echo "Tạo file .env mới cho backend"
+    if [ -f "../backend/.env.example" ]; then
+        cp ../backend/.env.example ../backend/.env
+        sed -i '' "s/MQTT_BROKER_URL=.*/MQTT_BROKER_URL=$IP_ADDRESS/" ../backend/.env
+    else
+        echo "MQTT_BROKER_URL=$IP_ADDRESS
+MQTT_BROKER_PORT=2403
+PORT=4000" > ../backend/.env
+    fi
+fi
 
-# Cập nhật file .env của frontend
-sed -i '' "s|REACT_APP_API_URL=.*|REACT_APP_API_URL=http://$IP_ADDRESS:4000/api|" ../frontend/.env
-sed -i '' "s|REACT_APP_WEBSOCKET_URL=.*|REACT_APP_WEBSOCKET_URL=ws://$IP_ADDRESS:4000|" ../frontend/.env
+# Kiểm tra và cập nhật file .env của frontend
+if [ -f "../frontend/.env" ]; then
+    sed -i '' "s|REACT_APP_API_URL=.*|REACT_APP_API_URL=http://$IP_ADDRESS:4000/api|" ../frontend/.env
+    sed -i '' "s|REACT_APP_WEBSOCKET_URL=.*|REACT_APP_WEBSOCKET_URL=ws://$IP_ADDRESS:4000|" ../frontend/.env
+    echo "Cập nhật file .env của frontend thành công"
+else
+    echo "Tạo file .env mới cho frontend"
+    echo "REACT_APP_API_URL=http://$IP_ADDRESS:4000/api
+REACT_APP_WEBSOCKET_URL=ws://$IP_ADDRESS:4000" > ../frontend/.env
+fi
+
+# Lưu thư mục hiện tại
+CURRENT_DIR=$(pwd)
 
 # Khởi động backend
 echo "Khởi động backend..."
@@ -47,7 +70,7 @@ FRONTEND_PID=$!
 echo "Frontend đang chạy với PID: $FRONTEND_PID"
 
 # Quay lại thư mục command
-cd ../command
+cd "$CURRENT_DIR"
 
 # Hiển thị thông tin truy cập
 echo ""
@@ -66,16 +89,16 @@ echo "====================================="
 # Xử lý khi thoát
 function cleanup {
     echo "Đang dừng các dịch vụ..."
-    
+
     kill $FRONTEND_PID
     echo "Đã dừng frontend"
-    
+
     kill $BACKEND_PID
     echo "Đã dừng backend"
-    
+
     kill $MOSQUITTO_PID
     echo "Đã dừng Mosquitto"
-    
+
     rm mosquitto_temp.conf
     echo "Đã dọn dẹp file tạm"
 }
