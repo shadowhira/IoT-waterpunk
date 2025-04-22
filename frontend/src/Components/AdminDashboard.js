@@ -31,22 +31,88 @@ function AdminDashboard() {
   // State để quản lý ratio của pool
   // const [activeToggle, setActiveToggle] = useState(1);
   const [ratio, setRatio] = useState(0);
+  const [waterLevelInfo, setWaterLevelInfo] = useState({
+    distance: 0,
+    tankHeight: 15,
+    percentage: 0
+  });
+  const [sensorData, setSensorData] = useState({
+    temperature: 0,
+    tds: 0,
+    flowRate: 0,
+    pumpState: 0
+  });
   useEffect(() => {
     // WebSocket data handler
     const handleMqttData = (newData) => {
-      // console.log("Phản hồi từ server:", newData);
+      try {
+        // Bỏ qua các lệnh điều khiển
+        if (
+          newData.data === "off" ||
+          newData.data === "on" ||
+          newData.data === "auto"
+        )
+          return;
 
-      if (
-        newData.data === "off" ||
-        newData.data === "on" ||
-        newData.data === "auto"
-      )
-        return;
+        // Xử lý dữ liệu cảm biến
+        let sensorData;
 
-      // Parse new data and update state
-      const newParsedData = JSON.parse(newData.data);
+        if (typeof newData.data === 'string') {
+          sensorData = JSON.parse(newData.data);
+        } else if (newData.payload) {
+          sensorData = newData.payload;
+        } else {
+          console.error("Invalid sensor data format");
+          return;
+        }
 
-      setRatio(Math.round(((15 - newParsedData.distance) / 15) * 100) / 100);
+        // Lấy thông tin khoảng cách và chiều cao bể
+        const distance = parseFloat(sensorData.distance) || 0;
+        const tankHeight = parseFloat(sensorData.tankHeight) || 15; // Mặc định 15cm nếu không có dữ liệu
+
+        // Tính toán tỷ lệ mực nước
+        let waterRatio;
+        let percentage;
+
+        if (sensorData.currentLevelPercent !== undefined) {
+          // Nếu dữ liệu đã có currentLevelPercent (từ simulator)
+          percentage = parseFloat(sensorData.currentLevelPercent);
+          waterRatio = percentage / 100;
+        } else if (distance !== undefined) {
+          // Nếu chỉ có khoảng cách (từ ESP32 thực)
+          percentage = Math.round(((tankHeight - distance) / tankHeight) * 100 * 10) / 10;
+          waterRatio = percentage / 100;
+        } else {
+          console.error("Missing water level data");
+          return;
+        }
+
+        // Đảm bảo tỷ lệ nằm trong khoảng [0, 1]
+        waterRatio = Math.min(Math.max(waterRatio, 0), 1);
+        percentage = Math.min(Math.max(percentage, 0), 100);
+
+        // Cập nhật thông tin mực nước
+        setWaterLevelInfo({
+          distance: distance,
+          tankHeight: tankHeight,
+          percentage: percentage
+        });
+
+        // Cập nhật dữ liệu cảm biến
+        setSensorData({
+          temperature: parseFloat(sensorData.temperature) || 0,
+          tds: parseFloat(sensorData.tds) || 0,
+          flowRate: parseFloat(sensorData.flowRate) || 0,
+          pumpState: parseInt(sensorData.pumpState) || 0
+        });
+
+        // Cập nhật tỷ lệ cho hiển thị bể nước
+        setRatio(waterRatio);
+        console.log(`Cập nhật mực nước: ${percentage.toFixed(1)}% (Khoảng cách: ${distance.toFixed(1)}cm)`);
+        console.log(`Nhiệt độ: ${sensorData.temperature}°C | TDS: ${sensorData.tds} ppm | Lưu lượng: ${sensorData.flowRate} L/phút`);
+      } catch (error) {
+        console.error("Error processing sensor data:", error);
+      }
     };
 
     // Add WebSocket event listeners
@@ -74,8 +140,8 @@ function AdminDashboard() {
         display: "flex",
         flexDirection: { xs: "column", md: "row" },
         alignItems: "center",
-        marginRight: { xs: "10px", sm: "30px", md: "50px" },
-        marginLeft: { xs: "10px", sm: "30px", md: "50px" },
+        // marginRight: { xs: "10px", sm: "30px", md: "50px" },
+        // marginLeft: { xs: "10px", sm: "30px", md: "50px" },
         overflowY: { xs: "auto", md: "hidden" },
         overflowX: "hidden",
       }}
@@ -232,9 +298,65 @@ function AdminDashboard() {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
+            flexDirection: "column",
           }}
         >
           <Pool ratio={ratio}></Pool>
+
+          {/* Hiển thị thông tin mực nước và EC (TDS) */}
+          <Box
+            sx={{
+              width: "100%",
+              display: "flex",
+              justifyContent: "space-around",
+              marginTop: "20px",
+              padding: "0 20px",
+            }}
+          >
+            <Box
+              sx={{
+                backgroundColor: "#f5f5f5",
+                borderRadius: "10px",
+                padding: "10px 15px",
+                boxShadow: "0 2px 5px rgba(0,0,0,0.1)",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+              }}
+            >
+              <Typography variant="subtitle1" fontWeight="bold" color="primary">
+                Mực nước
+              </Typography>
+              <Typography variant="h5" fontWeight="bold" color="secondary">
+                {waterLevelInfo.percentage.toFixed(1)}%
+              </Typography>
+              <Typography variant="body2" color="textSecondary">
+                Khoảng cách: {waterLevelInfo.distance.toFixed(1)} cm
+              </Typography>
+            </Box>
+
+            <Box
+              sx={{
+                backgroundColor: "#f5f5f5",
+                borderRadius: "10px",
+                padding: "10px 15px",
+                boxShadow: "0 2px 5px rgba(0,0,0,0.1)",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+              }}
+            >
+              <Typography variant="subtitle1" fontWeight="bold" color="primary">
+                Độ đục (TDS)
+              </Typography>
+              <Typography variant="h5" fontWeight="bold" color="secondary">
+                {sensorData?.tds || 0} ppm
+              </Typography>
+              <Typography variant="body2" color="textSecondary">
+                Nhiệt độ: {sensorData?.temperature || 0}°C
+              </Typography>
+            </Box>
+          </Box>
         </Box>
       </Box>
     </Box>

@@ -5,6 +5,7 @@ import { Routes, Route } from 'react-router-dom';
 import Navbar from './Navbar/Navbar';
 import UserInfo from './UserInfo';
 import ECDataTable from './DataWater/ECDataTable';
+import SensorDataTable from './DataWater/SensorDataTable';
 import InvoiceTable from './Invoice/InvoiceTable';
 import WaterBillChart from './Statics/WaterBillChart';
 import WaterDataChart from './Statics/WaterDataChart';
@@ -85,7 +86,7 @@ function Dashboard({ user, role }) {
                                 <Navigate to="/not-found" /> // Redirect nếu role không hợp lệ
                             )
                         } />
-                        <Route path="/du-lieu" element={<ECDataTable />} />
+                        <Route path="/du-lieu" element={<SensorDataTable />} />
                         <Route path="/hoa-don" element={<InvoiceTable />} />
                         <Route path="/thong-ke/tien-nuoc" element={<WaterBillChart />} />
                         <Route path="/thong-ke/du-lieu-nuoc" element={<WaterDataChart />} />

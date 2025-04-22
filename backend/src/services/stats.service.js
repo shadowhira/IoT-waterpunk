@@ -79,6 +79,11 @@ const checkThresholds = async (data) => {
     }
   }
 
+  // Thêm timestamp nếu chưa có
+  if (!data.timestamp) {
+    data.timestamp = new Date();
+  }
+
   // Lưu dữ liệu vào MongoDB
   const newData = new SensorData(data);
   return await newData.save();
@@ -115,36 +120,114 @@ const createAlert = (alertType, message, device, leak_type = 0, value = 0) => {
 class statsService {
   // Xử lý dữ liệu từ sensor
   static handleSensorData = async (data) => {
-    // console.log('data: ', data);
-    // if (typeof data === 'string') {
+    try {
+      // Đảm bảo dữ liệu là object
+      let sensorData;
+      if (typeof data === 'string') {
+        sensorData = JSON.parse(data);
+      } else {
+        sensorData = data;
+      }
 
-    //     return;
-    // }
-    data = await JSON.parse(data); // Parse nếu dữ liệu là string
-    await checkThresholds(data);
+      // Kiểm tra và chuẩn hóa dữ liệu
+      const validatedData = {
+        temperature: parseFloat(sensorData.temperature) || 0,
+        tds: parseFloat(sensorData.tds) || 0,
+        flowRate: parseFloat(sensorData.flowRate) || 0,
+        distance: parseFloat(sensorData.distance) || 0,
+        pumpState: parseInt(sensorData.pumpState) || 0,
+        currentLevelPercent: parseFloat(sensorData.currentLevelPercent) || 0,
+        leakDetected: parseInt(sensorData.leakDetected) || 0,
+        leakType: parseInt(sensorData.leakType) || 0
+      };
+
+      // Gửi dữ liệu đã chuẩn hóa đến WebSocket
+      if (global.wss) {
+        global.wss.clients.forEach((client) => {
+          if (client.readyState === 1) { // WebSocket.OPEN
+            client.send(JSON.stringify({
+              topic: 'sensor_data',
+              payload: validatedData
+            }));
+          }
+        });
+      }
+
+      // Xử lý dữ liệu
+      await checkThresholds(validatedData);
+
+      return validatedData;
+    } catch (error) {
+      console.error('Lỗi khi xử lý dữ liệu cảm biến:', error);
+      return null;
+    }
   };
 
-  // Lấy tất cả dữ liệu sensor
+  // Lấy tất cả dữ liệu sensor với phân trang và lọc
   static getAllData = async (req) => {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 20;
-    const skip = (page - 1) * limit;
+    try {
+      // Lấy các tham số phân trang
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 20;
+      const skip = (page - 1) * limit;
 
-    const data = await SensorData.find({})
-      .skip(skip)
-      .limit(limit)
-      .sort({ createAt: -1 });
+      // Xây dựng điều kiện lọc
+      const filter = {};
 
-    const total = await SensorData.countDocuments();
-    return {
-      data: data,
-      meta: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-      },
-    };
+      // Lọc theo ngày
+      if (req.query.startDate) {
+        filter.createdAt = { $gte: new Date(req.query.startDate) };
+      }
+
+      if (req.query.endDate) {
+        filter.createdAt = { ...filter.createdAt, $lte: new Date(req.query.endDate) };
+      }
+
+      // Lọc theo nhiệt độ
+      if (req.query.minTemp) {
+        filter.temperature = { $gte: parseFloat(req.query.minTemp) };
+      }
+
+      if (req.query.maxTemp) {
+        filter.temperature = { ...filter.temperature, $lte: parseFloat(req.query.maxTemp) };
+      }
+
+      // Lọc theo TDS
+      if (req.query.minTds) {
+        filter.tds = { $gte: parseFloat(req.query.minTds) };
+      }
+
+      if (req.query.maxTds) {
+        filter.tds = { ...filter.tds, $lte: parseFloat(req.query.maxTds) };
+      }
+
+      // Lọc theo trạng thái máy bơm
+      if (req.query.pumpState && req.query.pumpState !== 'all') {
+        filter.pumpState = parseInt(req.query.pumpState);
+      }
+
+      // Lấy dữ liệu từ database
+      const data = await SensorData.find(filter)
+        .skip(skip)
+        .limit(limit)
+        .sort({ createdAt: -1 });
+
+      // Đếm tổng số bản ghi thỏa mãn điều kiện lọc
+      const total = await SensorData.countDocuments(filter);
+
+      return {
+        data: data,
+        meta: {
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit),
+        },
+      };
+    } catch (error) {
+      console.error('Error getting sensor data:', error);
+      throw error;
+    }
   };
 }
 

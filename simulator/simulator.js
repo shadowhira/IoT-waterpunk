@@ -215,6 +215,7 @@ function sendSensorData() {
   // Hiển thị thông báo ngắn gọn hơn
   console.log('\n[' + new Date().toLocaleTimeString() + '] Gửi dữ liệu cảm biến:');
   console.log(`  Nhiệt độ: ${sensorData.temperature}°C | TDS: ${sensorData.tds} ppm | Lưu lượng: ${sensorData.flowRate} L/phút`);
+  console.log(`  Khoảng cách: ${sensorData.distance.toFixed(1)} cm | Chiều cao bể: ${systemConfig.tank_height} cm`);
   console.log(`  Mực nước: ${sensorData.currentLevelPercent.toFixed(1)}% | Máy bơm: ${sensorData.pumpState ? 'BẬT' : 'TẮT'} | Rò rỉ: ${sensorData.leakDetected ? 'CÓ' : 'KHÔNG'}`);
   if (sensorData.leakDetected) {
     console.log(`  Loại rò rỉ: ${getLeakTypeName(sensorData.leakType)}`);

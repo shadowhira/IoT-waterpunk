@@ -36,40 +36,66 @@ client.on("connect", () => {
 
 // Lắng nghe dữ liệu từ topic
 client.on('message', (topic, message) => {
-  // console.log(`Dữ liệu nhận được từ topic "${topic}": ${message.toString()}`);
-  const data = message.toString();
-  // console.log('data: ', data);
+  try {
+    console.log(`Nhận dữ liệu từ topic "${topic}"`);
+    const data = message.toString();
 
-  // Xử lý dữ liệu theo topic
-  switch (topic) {
-    case MQTT_CONFIG.topics.sensorData:
-      // Gửi dữ liệu đến clients qua WebSocket
-      if (global.wss) {
-        global.wss.clients.forEach((client) => {
-          if (client.readyState === 1) { // 1 = WebSocket.OPEN
-            client.send(JSON.stringify({ topic: 'sensor_data', data })); // Gửi dữ liệu đến client
-          }
-        });
-      }
+    // Xử lý dữ liệu theo topic
+    switch (topic) {
+      case MQTT_CONFIG.topics.sensorData:
+        // Gọi hàm xử lý dữ liệu sensor (hàm này sẽ gửi dữ liệu qua WebSocket)
+        statsService.handleSensorData(data);
+        break;
 
-      // Gọi hàm xử lý dữ liệu sensor
-      statsService.handleSensorData(data);
-      break;
+      case MQTT_CONFIG.topics.configStatus:
+        // Xử lý cập nhật cấu hình
+        const configService = require('../services/config.service');
+        configService.handleConfigUpdate(data);
+        break;
 
-    case MQTT_CONFIG.topics.configStatus:
-      // Xử lý cập nhật cấu hình
-      const configService = require('../services/config.service');
-      configService.handleConfigUpdate(data);
-      break;
+      case MQTT_CONFIG.topics.leakAlert:
+        // Xử lý cảnh báo rò rỉ
+        const alertService = require('../services/alert.service');
+        alertService.handleLeakAlert(data);
+        break;
 
-    case MQTT_CONFIG.topics.leakAlert:
-      // Xử lý cảnh báo rò rỉ
-      const alertService = require('../services/alert.service');
-      alertService.handleLeakAlert(data);
-      break;
+      case MQTT_CONFIG.topics.control:
+        // Xử lý phản hồi điều khiển
+        console.log(`Nhận lệnh điều khiển: ${data}`);
+        // Gửi thông báo qua WebSocket
+        if (global.wss) {
+          global.wss.clients.forEach((client) => {
+            if (client.readyState === 1) { // WebSocket.OPEN
+              client.send(JSON.stringify({
+                topic: 'control_status',
+                payload: { command: data, timestamp: new Date().toISOString() }
+              }));
+            }
+          });
+        }
+        break;
 
-    default:
-      console.log(`Không có xử lý cho topic: ${topic}`);
+      case MQTT_CONFIG.topics.level:
+        // Xử lý phản hồi mức nước
+        console.log(`Nhận mức nước mong muốn: ${data}`);
+        // Gửi thông báo qua WebSocket
+        if (global.wss) {
+          global.wss.clients.forEach((client) => {
+            if (client.readyState === 1) { // WebSocket.OPEN
+              client.send(JSON.stringify({
+                topic: 'level_status',
+                payload: { level: parseInt(data), timestamp: new Date().toISOString() }
+              }));
+            }
+          });
+        }
+        break;
+
+      default:
+        console.log(`Không có xử lý cho topic: ${topic}`);
+    }
+  } catch (error) {
+    console.error(`Lỗi khi xử lý tin nhắn MQTT từ topic ${topic}:`, error);
   }
 });
 

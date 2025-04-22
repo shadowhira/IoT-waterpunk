@@ -11,4 +11,7 @@ router.use("/system", require("./system"))
 // Route mới cho cấu hình hệ thống
 router.use("/config", require("./config"))
 
+// Route mới cho dữ liệu cảm biến
+router.use("/sensor-data", require("./sensor"))
+
 module.exports = router;
