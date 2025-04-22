@@ -15,13 +15,16 @@ LiquidCrystal_I2C lcd(0x27, 16, 2);
 // const char* password = "phong701";
 // const char* ssid = "Nguyen Van Tri";
 // const char* password = "26111952";
+// const char* ssid = "Tang 4";
+// const char* password = "66666666";
 const char* ssid = "Tenda_189718";
 const char* password = "88888888";
 
 // MQTT thông tin
 // const char* mqttServer = "192.168.100.137"; // Home
-const char* mqttServer = "192.168.0.108"; // Binh
-// const char* mqttServer = "192.168.0.113"; // Bach
+// const char* mqttServer = "192.168.0.103"; // Dat
+const char* mqttServer = "192.168.0.112"; // Bach
+
 const int mqttPort = 2403;
 const char* mqttDataTopic = "/sensor/data";
 const char* controlTopic = "/sensor/control";
@@ -241,35 +244,90 @@ void sendCurrentConfig() {
   client.publish(configStatusTopic, configMsg.c_str());
 }
 
-// Kết nối MQTT
+// Kết nối MQTT với timeout
 void connectToMQTT() {
-  while (!client.connected()) {
+  // Nếu không có kết nối WiFi, không cố gắng kết nối MQTT
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("Không có kết nối WiFi, bỏ qua kết nối MQTT");
+    return;
+  }
+
+  // Thử kết nối MQTT với timeout
+  Serial.println("Thử kết nối MQTT...");
+  int attempts = 0;
+  const int maxAttempts = 3; // Số lần thử tối đa
+
+  while (!client.connected() && attempts < maxAttempts) {
+    Serial.print("Lần thử ");
+    Serial.print(attempts + 1);
+    Serial.print("/");
+    Serial.println(maxAttempts);
+
     if (client.connect("ESP32Client")) {
+      Serial.println("Kết nối MQTT thành công!");
       client.subscribe(controlTopic);
       client.subscribe(levelTopic);
       client.subscribe(configTopic);
 
       // Gửi cấu hình hiện tại khi kết nối
       sendCurrentConfig();
+      return; // Thoát khỏi hàm nếu kết nối thành công
     } else {
+      Serial.println("Kết nối MQTT thất bại, thử lại sau 2 giây...");
       delay(2000);
+      attempts++;
     }
+  }
+
+  if (!client.connected()) {
+    Serial.println("Không thể kết nối MQTT sau nhiều lần thử. Tiếp tục chạy offline.");
   }
 }
 
 // Kiểm tra cảm biến và điều khiển máy bơm
 void handleSensorLogic() {
+  // Đọc dữ liệu cảm biến nhiệt độ
   sensors.requestTemperatures();
-  temperatureC = sensors.getTempCByIndex(0);
+  float tempReading = sensors.getTempCByIndex(0);
+  // Kiểm tra giá trị hợp lệ trước khi gán
+  if (tempReading != DEVICE_DISCONNECTED_C && tempReading > -100) {
+    temperatureC = tempReading;
+  } else {
+    Serial.println("Lỗi đọc cảm biến nhiệt độ");
+  }
+
+  // Đọc dữ liệu cảm biến TDS
   int sensorValue = analogRead(TDS_PIN);
   float voltage = sensorValue * (VREF / 4095.0);
   tdsValue = (133.42 * voltage * voltage * voltage
               - 255.86 * voltage * voltage
               + 857.39 * voltage) * TDS_FACTOR;
+
+  // Đọc dữ liệu cảm biến lưu lượng
   flowRate = pulseCount / 7.5 / 30;
   pulseCount = 0;
-  distance = measureDistance();
+
+  // Đọc dữ liệu cảm biến khoảng cách
+  float distanceReading = measureDistance();
+  if (distanceReading >= 0 && distanceReading <= TANK_HEIGHT * 2) { // Kiểm tra giá trị hợp lệ
+    distance = distanceReading;
+  } else {
+    Serial.println("Lỗi đọc cảm biến khoảng cách");
+  }
+
+  // Tính toán phần trăm mực nước
   float currentLevelPercent = ((TANK_HEIGHT - distance) / TANK_HEIGHT) * 100.0;
+  if (currentLevelPercent < 0) currentLevelPercent = 0;
+  if (currentLevelPercent > 100) currentLevelPercent = 100;
+
+  // In ra Serial để debug
+  Serial.println("Thông số cảm biến:");
+  Serial.print("Nhiệt độ: "); Serial.print(temperatureC); Serial.println(" *C");
+  Serial.print("TDS: "); Serial.print(tdsValue); Serial.println(" ppm");
+  Serial.print("Lưu lượng: "); Serial.print(flowRate); Serial.println(" L/phút");
+  Serial.print("Khoảng cách: "); Serial.print(distance); Serial.println(" cm");
+  Serial.print("Mực nước: "); Serial.print(currentLevelPercent); Serial.println(" %");
+  Serial.print("Máy bơm: "); Serial.println(pumpState ? "BẬT" : "TẮT");
 
   // Kiểm tra rò rỉ
   checkForLeaks();
@@ -390,10 +448,23 @@ void setup() {
   pumpTimeout = false;
   leakType = 0;
 
-  // Kết nối WiFi
+  // Kết nối WiFi với timeout
   WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED) {
+  int wifiAttempts = 0;
+  const int maxAttempts = 20; // 10 giây timeout
+
+  while (WiFi.status() != WL_CONNECTED && wifiAttempts < maxAttempts) {
     delay(500);
+    Serial.print(".");
+    wifiAttempts++;
+  }
+
+  if (WiFi.status() == WL_CONNECTED) {
+    Serial.println("\nĐã kết nối WiFi thành công!");
+    Serial.print("Địa chỉ IP: ");
+    Serial.println(WiFi.localIP());
+  } else {
+    Serial.println("\nKhông thể kết nối WiFi. Tiếp tục với chế độ offline.");
   }
 
   // Thiết lập MQTT
@@ -420,22 +491,41 @@ void setup() {
   lcd.setCursor(0, 0);
   lcd.print("IoT Water System");
   lcd.setCursor(0, 1);
-  lcd.print("Leak Detection");
+  lcd.print("Initializing...");
   delay(2000);
+
+  // Hiển thị thông báo khi đang kết nối WiFi
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Connecting WiFi");
+  lcd.setCursor(0, 1);
+  lcd.print("Please wait...");
+  delay(1000);
 }
 
 void loop() {
-      if (WiFi.status() != WL_CONNECTED) {
-        Serial.println("Mất kết nối WiFi! Đang thử kết nối lại...");
-        WiFi.begin(ssid, password);
-        while (WiFi.status() != WL_CONNECTED) {
-            delay(500);
-            Serial.print(".");
-        }
-        Serial.println("\nKết nối lại thành công!");
-        Serial.print("Địa chỉ IP mới: ");
-        Serial.println(WiFi.localIP());
+  // Kiểm tra kết nối WiFi với timeout
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("Mất kết nối WiFi! Đang thử kết nối lại...");
+    WiFi.begin(ssid, password);
+
+    int wifiAttempts = 0;
+    const int maxAttempts = 10; // 5 giây timeout
+
+    while (WiFi.status() != WL_CONNECTED && wifiAttempts < maxAttempts) {
+      delay(500);
+      Serial.print(".");
+      wifiAttempts++;
     }
+
+    if (WiFi.status() == WL_CONNECTED) {
+      Serial.println("\nKết nối lại thành công!");
+      Serial.print("Địa chỉ IP mới: ");
+      Serial.println(WiFi.localIP());
+    } else {
+      Serial.println("\nKhông thể kết nối WiFi. Tiếp tục với chế độ offline.");
+    }
+  }
 
   if (!client.connected()) {
     connectToMQTT();
