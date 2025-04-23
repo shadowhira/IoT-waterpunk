@@ -1,4 +1,7 @@
-const SOCKET_SERVER_URL = process.env.REACT_APP_WEBSOCKET_URL || "ws://localhost:4000";
+// Sử dụng URL cố định để đảm bảo kết nối đến backend
+const SOCKET_SERVER_URL = "ws://localhost:4000";
+
+console.log("WebSocket URL:", SOCKET_SERVER_URL);
 let socket = null;
 let topicListeners = {}; // Quản lý listener theo topic
 let reconnectInterval = null; // Biến để kiểm soát việc kết nối lại
@@ -21,17 +24,52 @@ const connectWebSocket = () => {
 
     socket.onmessage = (event) => {
       console.log("Nhận dữ liệu từ server:", event.data);
-      const data = JSON.parse(event.data);
-      const topic = data.topic; // Phân tách topic và payload
+      try {
+        const data = JSON.parse(event.data);
+        console.log("Dữ liệu đã parse:", data);
 
-      if (topic && topicListeners[topic]) {
-        // Gọi các listener đã đăng ký với topic
-        topicListeners[topic].forEach((listener) => listener(JSON.parse(event.data)));
+        // Xử lý cả tin nhắn chào mừng
+        if (data.message && data.message === "Welcome to WebSocket server!") {
+          console.log("Kết nối WebSocket thành công, nhận tin nhắn chào mừng");
+          return;
+        }
+
+        // Xử lý dữ liệu cảm biến
+        if (data.topic === "sensor_data" || data.topic === "/sensor/data") {
+          console.log("Nhận dữ liệu cảm biến:", data);
+
+          // Gọi các listener đã đăng ký với cả hai topic
+          if (topicListeners["sensor_data"]) {
+            topicListeners["sensor_data"].forEach((listener) => listener(data));
+          }
+
+          if (topicListeners["/sensor/data"]) {
+            topicListeners["/sensor/data"].forEach((listener) => listener(data));
+          }
+          return;
+        }
+
+        // Xử lý các topic khác
+        const topic = data.topic;
+        if (topic && topicListeners[topic]) {
+          console.log("Gọi listener cho topic:", topic);
+          // Gọi các listener đã đăng ký với topic
+          topicListeners[topic].forEach((listener) => listener(data));
+        } else {
+          console.log("Không có listener nào đăng ký cho topic:", topic);
+        }
+      } catch (error) {
+        console.error("Lỗi khi xử lý dữ liệu WebSocket:", error);
       }
     };
 
     socket.onerror = (error) => {
       console.error("Lỗi WebSocket:", error);
+      console.log("Chi tiết kết nối WebSocket:", {
+        url: SOCKET_SERVER_URL,
+        readyState: socket ? socket.readyState : 'socket is null',
+        error: error
+      });
     };
 
     socket.onclose = () => {

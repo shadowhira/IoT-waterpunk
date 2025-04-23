@@ -101,6 +101,12 @@ bool leakDetected = false;
 bool pumpTimeout = false;
 int leakType = 0;  // 0: Không rò rỉ, 1: Rò rỉ mực nước, 2: Rò rỉ lưu lượng, 3: Bơm quá lâu
 
+// Thời gian tự động đặt lại cảnh báo (mặc định: 5 phút)
+#define AUTO_RESET_LEAK_TIME 300000 // 5 phút tính bằng mili giây
+
+// Biến theo dõi thời gian cảnh báo
+unsigned long leakDetectedTime = 0;
+
 // Ngắt lưu lượng nước
 void IRAM_ATTR pulseCounter() {
   pulseCount++;
@@ -132,6 +138,7 @@ void checkForLeaks() {
       if (rateOfChange > LEAK_THRESHOLD && !leakDetected) {
         leakDetected = true;
         leakType = 1; // Rò rỉ mực nước
+        leakDetectedTime = millis(); // Ghi nhận thời điểm phát hiện rò rỉ
 
         // Gửi cảnh báo
         String alertMsg = "{\"type\":\"leak\",\"source\":\"water_level\",\"value\":" + String(rateOfChange) + "}";
@@ -144,6 +151,7 @@ void checkForLeaks() {
   if (!pumpState && flowRate > FLOW_THRESHOLD && !leakDetected) {
     leakDetected = true;
     leakType = 2; // Rò rỉ lưu lượng
+    leakDetectedTime = millis(); // Ghi nhận thời điểm phát hiện rò rỉ
 
     // Gửi cảnh báo
     String alertMsg = "{\"type\":\"leak\",\"source\":\"flow_rate\",\"value\":" + String(flowRate) + "}";
@@ -154,7 +162,9 @@ void checkForLeaks() {
   if (pumpState && !pumpTimeout) {
     if (pumpStartTime > 0 && (millis() - pumpStartTime) / 1000 > PUMP_TIMEOUT) {
       pumpTimeout = true;
+      leakDetected = true;
       leakType = 3; // Bơm quá lâu
+      leakDetectedTime = millis(); // Ghi nhận thời điểm phát hiện rò rỉ
 
       // Gửi cảnh báo
       String alertMsg = "{\"type\":\"leak\",\"source\":\"pump_timeout\",\"value\":" + String(PUMP_TIMEOUT) + "}";
@@ -746,6 +756,18 @@ void loop() {
   }
   client.loop();
   handleSensorLogic();
+
+  // Tự động đặt lại cảnh báo rò rỉ sau khoảng thời gian định trước
+  if (leakDetected && (millis() - leakDetectedTime > AUTO_RESET_LEAK_TIME)) {
+    leakDetected = false;
+    pumpTimeout = false;
+    leakType = 0;
+    Serial.println("Tự động đặt lại cảnh báo rò rỉ sau " + String(AUTO_RESET_LEAK_TIME / 60000) + " phút");
+
+    // Gửi thông báo đặt lại cảnh báo
+    String alertMsg = "{\"type\":\"leak_reset\",\"status\":\"auto\",\"time\":" + String(AUTO_RESET_LEAK_TIME / 60000) + "}";
+    client.publish(leakAlertTopic, alertMsg.c_str());
+  }
 
   if (millis() - lastLogTime > 2000) {
     lastLogTime = millis();

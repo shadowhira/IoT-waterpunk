@@ -18,8 +18,8 @@ function Footer() {
         padding: { xs: "8px 5px", sm: "10px 0" }, // Khoảng cách trên dưới
         fontSize: { xs: "10px", sm: "12px", md: "14px" }, // Cỡ chữ responsive
         lineHeight: "1.5", // Khoảng cách giữa các dòng
-        position: "sticky",
-        bottom: 0, // Nằm ở dưới cùng của trang
+        // position: "sticky",
+        // bottom: 0, // Nằm ở dưới cùng của trang
         left: 0, // Căn sát bên trái
         width: "100%", // Chiếm toàn bộ chiều ngang
         zIndex: isMobile ? 1000 : 1, // Z-index cao hơn trên mobile để hiển thị trên BottomNavigation

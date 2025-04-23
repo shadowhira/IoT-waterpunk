@@ -28,29 +28,44 @@ function ToggleSwitch() {
   useEffect(() => {
     // WebSocket data handler
     const handleMqttData = (newData) => {
-      // Parse new data and update state
-      const newParsedData = JSON.parse(newData.data);
+      try {
+        // Lấy dữ liệu cảm biến từ payload hoặc data
+        let sensorData;
 
-      setIsActive((prevData) => {
-        // Ensure that the data array doesn't exceed 15 items
-        const updatedData =
-          newParsedData.pumpState === 1
-            ? true // Add new data to the front if there are less than 15 items
-            : false; // Otherwise, remove the last item and add the new one
+        if (newData.payload) {
+          // Dữ liệu từ backend qua WebSocket
+          sensorData = newData.payload;
+        } else if (typeof newData.data === 'string') {
+          // Dữ liệu dạng chuỗi JSON
+          sensorData = JSON.parse(newData.data);
+        } else if (newData.data) {
+          // Dữ liệu đã là object
+          sensorData = newData.data;
+        } else {
+          console.error("Invalid sensor data format", newData);
+          return;
+        }
 
-        // console.log("Dữ liệu mới:", updatedData);
-
-        return updatedData;
-      });
+        // Cập nhật trạng thái dựa trên pumpState
+        setIsActive((prevData) => {
+          const updatedData = sensorData.pumpState === 1;
+          console.log("Trạng thái máy bơm:", updatedData ? "ON" : "OFF");
+          return updatedData;
+        });
+      } catch (error) {
+        console.error("Lỗi khi xử lý dữ liệu máy bơm:", error);
+      }
     };
 
-    // Add WebSocket event listeners
+    // Add WebSocket event listeners - lắng nghe cả hai topic
     addTopicListener("/sensor/data", handleMqttData);
+    addTopicListener("sensor_data", handleMqttData);
 
     // Cleanup on component unmount
     return () => {
       console.log("Component unmounted. Gỡ bỏ các listener và ngắt kết nối...");
       removeTopicListener("/sensor/data", handleMqttData);
+      removeTopicListener("sensor_data", handleMqttData);
     };
   }, []); // Empty dependency array ensures this runs once on mount
 

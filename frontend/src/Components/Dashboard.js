@@ -19,9 +19,10 @@ import { Navigate } from 'react-router-dom';
 import { connectWebSocket } from '../Socket/WebSocketService';
 
 function Dashboard({ user, role }) {
-    // Kết nối WebSocket khi component được tạo
+    // Không cần kết nối WebSocket ở đây vì đã kết nối ở App.js
     useEffect(() => {
-        connectWebSocket();
+        console.log('Dashboard mounted - WebSocket đã được kết nối ở App.js');
+        // Không gọi connectWebSocket() ở đây nữa
     }, []);
 
     return (
@@ -61,31 +62,30 @@ function Dashboard({ user, role }) {
                             sm: `calc(100vh - (${HEIGHT_USERINFO}px + ${HEIGHT_FOOTER}px + ${MARGIN_HEADING}px))`
                         },
                         position: 'relative',
-                        marginBottom: { xs: '100px', sm: '200px' },
+                        // marginBottom: { xs: '100px', sm: '200px' },
                         padding: { xs: '10px', sm: '0' }, // Thêm padding trên màn hình nhỏ
                         minHeight: '300px', // Đảm bảo có chiều cao tối thiểu
                         overflow: 'auto' // Cho phép cuộn nếu nội dung quá dài
                     }}
                 >
                     <Routes>
-                        <Route path="/" element={
-                            role === 'user' ? (
-                                <Welcome user={user} />
-                            ) : role === 'admin' ? (
-                                <AdminDashboard/>
-                            ) : (
-                                <Navigate to="/not-found" /> // Redirect nếu role không hợp lệ
-                            )
-                        } />
-                        <Route path="/welcome" element={
-                            role === 'user' ? (
-                                <Welcome user={user} />
-                            ) : role === 'admin' ? (
-                                <AdminDashboard/>
-                            ) : (
-                                <Navigate to="/not-found" /> // Redirect nếu role không hợp lệ
-                            )
-                        } />
+                        {/* Sử dụng cùng một component cho cả hai route để tránh mount/unmount */}
+                        {role === 'admin' ? (
+                            <>
+                                <Route path="/" element={<AdminDashboard />} />
+                                <Route path="/welcome" element={<AdminDashboard />} />
+                            </>
+                        ) : role === 'user' ? (
+                            <>
+                                <Route path="/" element={<Welcome user={user} />} />
+                                <Route path="/welcome" element={<Welcome user={user} />} />
+                            </>
+                        ) : (
+                            <>
+                                <Route path="/" element={<Navigate to="/not-found" />} />
+                                <Route path="/welcome" element={<Navigate to="/not-found" />} />
+                            </>
+                        )}
                         <Route path="/du-lieu" element={<SensorDataTable />} />
                         <Route path="/hoa-don" element={<InvoiceTable />} />
                         <Route path="/thong-ke/tien-nuoc" element={<WaterBillChart />} />

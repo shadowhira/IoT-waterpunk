@@ -155,8 +155,9 @@ client.on('connect', () => {
 
 // Xử lý tin nhắn MQTT
 client.on('message', (topic, message) => {
-    console.log(`Nhận dữ liệu từ topic "${topic}": ${message.toString()}`);
-
+    const currentTime = new Date().toLocaleString();
+    console.log(`[${currentTime}] Nhận dữ liệu từ topic "${topic}": ${message.toString()}`);
+    
     try {
         const data = JSON.parse(message);
 

@@ -1,11 +1,17 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, memo } from "react";
 import {
   Box,
   Typography,
+  Button,
+  Alert,
+  AlertTitle,
+  Paper,
+  Grid,
 } from "@mui/material";
 import {
   BORDER_RADIUS_BIG,
-  BORDER_RADIUS_MEDIUM,
+  BORDER_RADIUS_SMALL,
+
   COLOR_CONTENT_ADMIN,
   HEIGHT_FOOTER,
   HEIGHT_USERINFO,
@@ -16,7 +22,7 @@ import {
   createItemInvoiceAnimation,
   hexToRgba,
 } from "../Assets/Constants/utils";
-import logoImage from "../Assets/Images/logo.png"; // Đường dẫn ảnh logo
+// import logoImage from "../Assets/Images/logo.png"; // Đường dẫn ảnh logo (removed)
 import ToggleSwitch from "./Buttons/Toggles/ToggleSwitch";
 import ToggleGroupThree from "./Buttons/ToggleGroupThree";
 import Pool from "./PoolWater/Pool";
@@ -24,12 +30,15 @@ import SliderControlPool from "./PoolWater/SliderControlPool";
 import {
   addTopicListener,
   removeTopicListener,
+  isWebSocketConnected,
+  connectWebSocket
 } from "../Socket/WebSocketService"; // Assuming WebSocketService manages your socket connection
+
+// Tạo animation
+const slideLeft = createItemInvoiceAnimation("left");
+const slideRight = createItemInvoiceAnimation("right");
+
 function AdminDashboard() {
-  const slideLeft = createItemInvoiceAnimation("-100px");
-  const slideRight = createItemInvoiceAnimation("100px");
-  // State để quản lý ratio của pool
-  // const [activeToggle, setActiveToggle] = useState(1);
   const [ratio, setRatio] = useState(0);
   const [waterLevelInfo, setWaterLevelInfo] = useState({
     distance: 0,
@@ -42,33 +51,108 @@ function AdminDashboard() {
     flowRate: 0,
     pumpState: 0
   });
+
+  // State để quản lý cảnh báo rò rỉ
+  const [leakAlert, setLeakAlert] = useState({
+    detected: false,
+    type: 0,
+    timestamp: null
+  });
+
+  // Sử dụng useRef để theo dõi xem component đã mount chưa
+  const isMounted = React.useRef(false);
+
+  // Hàm xử lý reset leak
+  const handleResetLeak = () => {
+    console.log('Gửi lệnh reset leak');
+    fetch('http://localhost:4000/api/v1/system/reset-leak', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    })
+    .then(response => response.json())
+    .then(data => {
+      console.log('Reset leak thành công:', data);
+      // Cập nhật trạng thái cảnh báo rò rỉ
+      setLeakAlert({
+        detected: false,
+        type: 0,
+        timestamp: null
+      });
+    })
+    .catch(error => {
+      console.error('Lỗi khi reset leak:', error);
+    });
+  };
+
   useEffect(() => {
+    // Chỉ khởi tạo giá trị mặc định nếu component chưa được mount
+    if (!isMounted.current) {
+      // Đánh dấu component đã được mount
+      isMounted.current = true;
+
+      // Khởi tạo giá trị mặc định cho waterLevelInfo
+      setWaterLevelInfo({
+        distance: 5,
+        tankHeight: 15,
+        percentage: 66.7
+      });
+
+      // Khởi tạo giá trị mặc định cho ratio
+      setRatio(0.667);
+
+      // Khởi tạo giá trị mặc định cho sensorData
+      setSensorData({
+        temperature: 25,
+        tds: 300,
+        flowRate: 0,
+        pumpState: 0
+      });
+
+      console.log('AdminDashboard mounted - đã khởi tạo giá trị mặc định');
+    }
+
     // WebSocket data handler
     const handleMqttData = (newData) => {
+      console.log('Nhận dữ liệu mới:', newData);
       try {
-        // Bỏ qua các lệnh điều khiển
-        if (
-          newData.data === "off" ||
-          newData.data === "on" ||
-          newData.data === "auto"
-        )
-          return;
-
         // Xử lý dữ liệu cảm biến
         let sensorData;
 
-        if (typeof newData.data === 'string') {
-          sensorData = JSON.parse(newData.data);
-        } else if (newData.payload) {
+        // Kiểm tra cấu trúc dữ liệu và lấy dữ liệu cảm biến
+        if (newData.payload) {
+          // Dữ liệu từ backend qua WebSocket
           sensorData = newData.payload;
+          console.log('Dữ liệu từ payload:', sensorData);
+        } else if (typeof newData.data === 'string') {
+          // Dữ liệu dạng chuỗi JSON
+          sensorData = JSON.parse(newData.data);
+          console.log('Dữ liệu từ data string:', sensorData);
+        } else if (newData.data) {
+          // Dữ liệu đã là object
+          sensorData = newData.data;
+          console.log('Dữ liệu từ data object:', sensorData);
         } else {
-          console.error("Invalid sensor data format");
+          console.error("Invalid sensor data format", newData);
+          return;
+        }
+
+        // Bỏ qua các lệnh điều khiển
+        if (
+          sensorData === "off" ||
+          sensorData === "on" ||
+          sensorData === "auto"
+        ) {
+          console.log('Bỏ qua lệnh điều khiển:', sensorData);
           return;
         }
 
         // Lấy thông tin khoảng cách và chiều cao bể
         const distance = parseFloat(sensorData.distance) || 0;
         const tankHeight = parseFloat(sensorData.tankHeight) || 15; // Mặc định 15cm nếu không có dữ liệu
+
+        console.log('Khoảng cách:', distance, 'Chiều cao bể:', tankHeight);
 
         // Tính toán tỷ lệ mực nước
         let waterRatio;
@@ -78,10 +162,12 @@ function AdminDashboard() {
           // Nếu dữ liệu đã có currentLevelPercent (từ simulator)
           percentage = parseFloat(sensorData.currentLevelPercent);
           waterRatio = percentage / 100;
+          console.log('Sử dụng currentLevelPercent:', percentage);
         } else if (distance !== undefined) {
           // Nếu chỉ có khoảng cách (từ ESP32 thực)
           percentage = Math.round(((tankHeight - distance) / tankHeight) * 100 * 10) / 10;
           waterRatio = percentage / 100;
+          console.log('Tính toán từ khoảng cách:', percentage);
         } else {
           console.error("Missing water level data");
           return;
@@ -91,20 +177,28 @@ function AdminDashboard() {
         waterRatio = Math.min(Math.max(waterRatio, 0), 1);
         percentage = Math.min(Math.max(percentage, 0), 100);
 
+        console.log('Tỷ lệ cuối cùng:', waterRatio, 'Phần trăm:', percentage);
+
         // Cập nhật thông tin mực nước
-        setWaterLevelInfo({
+        const newWaterLevelInfo = {
           distance: distance,
           tankHeight: tankHeight,
           percentage: percentage
-        });
+        };
+
+        setWaterLevelInfo(newWaterLevelInfo);
+        console.log('Đã cập nhật WaterLevelInfo:', newWaterLevelInfo);
 
         // Cập nhật dữ liệu cảm biến
-        setSensorData({
+        const newSensorData = {
           temperature: parseFloat(sensorData.temperature) || 0,
           tds: parseFloat(sensorData.tds) || 0,
           flowRate: parseFloat(sensorData.flowRate) || 0,
           pumpState: parseInt(sensorData.pumpState) || 0
-        });
+        };
+
+        setSensorData(newSensorData);
+        console.log('Đã cập nhật SensorData:', newSensorData);
 
         // Cập nhật tỷ lệ cho hiển thị bể nước
         setRatio(waterRatio);
@@ -115,193 +209,224 @@ function AdminDashboard() {
       }
     };
 
-    // Add WebSocket event listeners
+    // Không cần kiểm tra và kết nối WebSocket ở đây vì đã kết nối ở App.js
+    console.log('AdminDashboard: Sử dụng WebSocket đã được kết nối ở App.js');
+    // Không gọi connectWebSocket() ở đây nữa
+
+    // Hàm xử lý cảnh báo rò rỉ
+    const handleLeakAlert = (data) => {
+      console.log('Nhận cảnh báo rò rỉ:', data);
+      try {
+        if (data.payload) {
+          console.log('Cập nhật trạng thái cảnh báo rò rỉ:', data.payload);
+          setLeakAlert({
+            detected: data.payload.detected,
+            type: data.payload.type,
+            timestamp: data.payload.timestamp
+          });
+        }
+      } catch (error) {
+        console.error('Lỗi khi xử lý cảnh báo rò rỉ:', error);
+      }
+    };
+
+    // Hàm xử lý cảnh báo chung
+    const handleAlert = (data) => {
+      console.log('Nhận cảnh báo:', data);
+      try {
+        if (data.payload && data.payload.leak_type > 0) {
+          console.log('Cập nhật cảnh báo rò rỉ từ topic alert:', data.payload);
+          setLeakAlert({
+            detected: true,
+            type: data.payload.leak_type,
+            timestamp: data.payload.timestamp
+          });
+        }
+      } catch (error) {
+        console.error('Lỗi khi xử lý cảnh báo:', error);
+      }
+    };
+
+    // Hàm xử lý cảnh báo đã giải quyết
+    const handleAlertResolved = (data) => {
+      console.log('Nhận thông báo cảnh báo đã giải quyết:', data);
+      try {
+        if (data.payload && data.payload.leak_type > 0) {
+          console.log('Cập nhật trạng thái cảnh báo rò rỉ đã giải quyết');
+          setLeakAlert({
+            detected: false,
+            type: 0,
+            timestamp: null
+          });
+        }
+      } catch (error) {
+        console.error('Lỗi khi xử lý cảnh báo đã giải quyết:', error);
+      }
+    };
+
+    // Add WebSocket event listeners - lắng nghe cả hai topic dữ liệu và các topic cảnh báo
     addTopicListener("/sensor/data", handleMqttData);
+    addTopicListener("sensor_data", handleMqttData);
+    addTopicListener("leak", handleLeakAlert);
+    addTopicListener("alert", handleAlert);
+    addTopicListener("alert_resolved", handleAlertResolved);
 
     // Cleanup on component unmount
     return () => {
       console.log("Component unmounted. Gỡ bỏ các listener và ngắt kết nối...");
       removeTopicListener("/sensor/data", handleMqttData);
+      removeTopicListener("sensor_data", handleMqttData);
+      removeTopicListener("leak", handleLeakAlert);
+      removeTopicListener("alert", handleAlert);
+      removeTopicListener("alert_resolved", handleAlertResolved);
     };
   }, []); // Empty dependency array ensures this runs once on mount
 
-  // Hàm xử lý sự kiện thay đổi toggle - hiện tại không sử dụng
-  // const handleToggle = (event, newToggle) => {
-  //   // Nếu chọn một giá trị hợp lệ thì cập nhật state
-  //   if (newToggle !== null) {
-  //     setActiveToggle(newToggle);
-  //   }
-  // };
   return (
     <Box
       sx={{
-        height: `calc(100vh - (${HEIGHT_USERINFO}px + ${HEIGHT_FOOTER}px + ${MARGIN_HEADING}px))`,
+        height: "auto",
+        minHeight: `calc(100vh - ${HEIGHT_FOOTER}px - ${MARGIN_HEADING / 8}px)`,
         marginTop: MARGIN_HEADING / 8,
         display: "flex",
         flexDirection: { xs: "column", md: "row" },
-        alignItems: "center",
-        // marginRight: { xs: "10px", sm: "30px", md: "50px" },
-        // marginLeft: { xs: "10px", sm: "30px", md: "50px" },
+        alignItems: "flex-start", // Đổi từ center sang flex-start
         overflowY: { xs: "auto", md: "hidden" },
         overflowX: "hidden",
+        padding: "16px 24px", // Tăng padding để tạo khoảng cách
       }}
     >
-      <Box
-        sx={{
-          height: `calc(100vh - (${HEIGHT_USERINFO}px + ${HEIGHT_FOOTER}px + ${MARGIN_HEADING}px))`,
-          position: "relative",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          // backgroundColor: '#f0f0f0'
-          // marginTop: MARGIN_HEADING / 8,
-          flex: 2,
-        }}
-      >
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "center",
-            maxWidth: "900px",
-            minWidth: { xs: "300px", sm: "500px", md: "800px" },
-            width: { xs: "95%", sm: "90%", md: "80%" },
-            height: { xs: "auto", md: "80%" },
-            flexDirection: { xs: "column", md: "row" },
-          }}
-        >
-          <Box
-            sx={{
-              flex: 2, // Box thứ nhất chiếm 2 phần
-              backgroundColor: COLOR_CONTENT_ADMIN, // Màu để dễ phân biệt (tuỳ chọn)
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              borderTopLeftRadius: BORDER_RADIUS_BIG * 2,
-              borderBottomLeftRadius: BORDER_RADIUS_BIG * 2,
-              animation: `${slideLeft} 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.3s both`,
-            }}
-          >
-            <Box
-              sx={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                width: "80%",
-                height: "80%", // Chiều cao Box (tuỳ chỉnh theo ý bạn)
-                backgroundColor: "#fff", // Màu nền (tuỳ chỉnh)
-                border: `3px solid ${THEME_COLOR_BORDER}`, // Viền Box (tuỳ chỉnh)
-                borderRadius: BORDER_RADIUS_MEDIUM, // Bo góc (tuỳ chỉnh)
-                padding: "16px", // Khoảng cách bên trong
-                boxShadow: `rgba(0, 0, 0, 0.25) 0px 25px 50px -12px`,
-              }}
-            >
-              {/* Logo */}
-              <Box
-                component="img"
-                src={logoImage}
-                alt="Logo"
-                sx={{
-                  width: "85%",
-                }}
-              />
-              <Typography
-                variant="h3"
-                sx={{
-                  fontWeight: "bold",
-                  color: "#333",
-                  textShadow: `2px 2px 2px ${hexToRgba(THEME_COLOR_BORDER)}`,
-                  marginTop: "40px",
-                }}
-              >
-                Welcome Admin
-              </Typography>
-            </Box>
-          </Box>
-          <Box
-            sx={{
-              flex: 1, // Box thứ hai chiếm 1 phần
-              backgroundColor: "#fff", // Màu để dễ phân biệt (tuỳ chọn)
-              borderTopRightRadius: BORDER_RADIUS_BIG,
-              borderBottomRightRadius: BORDER_RADIUS_BIG,
-              boxShadow: `${hexToRgba(
-                COLOR_CONTENT_ADMIN,
-                0.4
-              )} 5px 5px, ${hexToRgba(
-                COLOR_CONTENT_ADMIN,
-                0.3
-              )} 10px 10px, ${hexToRgba(
-                COLOR_CONTENT_ADMIN,
-                0.2
-              )} 15px 15px, ${hexToRgba(
-                COLOR_CONTENT_ADMIN,
-                0.1
-              )} 20px 20px, ${hexToRgba(COLOR_CONTENT_ADMIN, 0.05)} 25px 25px`,
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              animation: `${slideRight} 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.3s both`,
-            }}
-          >
-            <Box
-              sx={{
-                display: "flex",
-                flex: 1,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <ToggleSwitch></ToggleSwitch>
-            </Box>
-            <Box
-              sx={{
-                display: "flex",
-                flex: 3,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <ToggleGroupThree></ToggleGroupThree>
-            </Box>
-          </Box>
-        </Box>
-      </Box>
+      {/* Phần điều khiển máy bơm và cảnh báo rò rỉ */}
       <Box
         sx={{
           flex: 1,
-          // backgroundColor : '#666'
+          marginRight: { xs: 0, md: "24px" }, // Thêm khoảng cách giữa hai cột khi hiển thị trên desktop
+          display: "flex",
+          flexDirection: "column",
           width: "100%",
-          height: "80%",
+          height: "100%",
+          justifyContent: "flex-start",
+          alignItems: "center",
+          gap: 4, // Tăng khoảng cách giữa các box
+          padding: "16px",
+        }}
+      >
+        {/* Phần cảnh báo rò rỉ */}
+        <Paper
+          elevation={3}
+          sx={{
+            width: "100%",
+            padding: "20px", // Tăng padding cho các Paper
+            borderRadius: BORDER_RADIUS_SMALL,
+            backgroundColor: leakAlert.detected ? "#fff4e5" : "#f5f5f5",
+            border: leakAlert.detected ? "1px solid #ff9800" : "none",
+          }}
+        >
+          <Typography variant="h6" gutterBottom>
+            Trạng thái cảnh báo rò rỉ
+          </Typography>
+
+          {leakAlert.detected ? (
+            <>
+              <Alert
+                severity="warning"
+                sx={{ mb: 2 }}
+              >
+                <AlertTitle>Phát hiện rò rỉ nước!</AlertTitle>
+                Loại rò rỉ: {leakAlert.type === 1 ? "Rò rỉ nhỏ" : "Rò rỉ lớn"}
+                {leakAlert.timestamp && (
+                  <Typography variant="body2">
+                    Thời gian: {new Date(leakAlert.timestamp).toLocaleString()}
+                  </Typography>
+                )}
+              </Alert>
+              <Button
+                variant="contained"
+                color="warning"
+                onClick={handleResetLeak}
+                fullWidth
+              >
+                Reset cảnh báo rò rỉ
+              </Button>
+            </>
+          ) : (
+            <Alert severity="success">
+              Không phát hiện rò rỉ nước
+            </Alert>
+          )}
+        </Paper>
+
+        {/* Phần điều khiển máy bơm */}
+        <Paper
+          elevation={3}
+          sx={{
+            width: "100%",
+            padding: "20px", // Tăng padding cho các Paper
+            borderRadius: BORDER_RADIUS_SMALL,
+          }}
+        >
+          <Typography variant="h6" gutterBottom>
+            Điều khiển máy bơm
+          </Typography>
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={6}>
+              <Typography variant="subtitle2" gutterBottom>
+                Trạng thái máy bơm
+              </Typography>
+              <ToggleSwitch />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Typography variant="subtitle2" gutterBottom>
+                Chế độ hoạt động
+              </Typography>
+              <ToggleGroupThree />
+            </Grid>
+          </Grid>
+        </Paper>
+
+        {/* Không còn phần điều khiển mực nước ở đây nữa */}
+      </Box>
+
+      {/* Phần hiển thị bể nước và thông tin cảm biến */}
+      <Box
+        sx={{
+          flex: 1,
+          width: "100%",
+          height: "100%",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           flexDirection: "column",
+          padding: "16px 16px 0 16px",
         }}
       >
-        <Box
+        {/* Phần điều khiển mực nước */}
+        <Paper
+          elevation={3}
           sx={{
-            flex: 1,
             width: "100%",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
+            padding: "20px", // Tăng padding cho các Paper
+            borderRadius: BORDER_RADIUS_SMALL,
+            marginBottom: "20px", // Tăng khoảng cách giữa slider và bể nước
           }}
         >
-          <SliderControlPool></SliderControlPool>
-        </Box>
+          <Typography variant="h6" gutterBottom>
+            Điều khiển mực nước
+          </Typography>
+          <SliderControlPool />
+        </Paper>
+
         <Box
           sx={{
-            flex: 3,
             width: "100%",
+            flex: 3,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             flexDirection: "column",
           }}
         >
-          <Pool ratio={ratio}></Pool>
+          <Pool ratio={ratio} />
 
           {/* Hiển thị thông tin mực nước và EC (TDS) */}
           <Box
@@ -309,7 +434,7 @@ function AdminDashboard() {
               width: "100%",
               display: "flex",
               justifyContent: "space-around",
-              marginTop: "20px",
+              marginTop: "24px", // Tăng khoảng cách giữa bể nước và thông tin cảm biến
               padding: "0 20px",
             }}
           >
@@ -317,11 +442,12 @@ function AdminDashboard() {
               sx={{
                 backgroundColor: "#f5f5f5",
                 borderRadius: "10px",
-                padding: "10px 15px",
+                padding: "16px 20px", // Tăng padding cho các box thông tin
                 boxShadow: "0 2px 5px rgba(0,0,0,0.1)",
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
+                width: "45%",
               }}
             >
               <Typography variant="subtitle1" fontWeight="bold" color="primary">
@@ -339,11 +465,12 @@ function AdminDashboard() {
               sx={{
                 backgroundColor: "#f5f5f5",
                 borderRadius: "10px",
-                padding: "10px 15px",
+                padding: "16px 20px", // Tăng padding cho các box thông tin
                 boxShadow: "0 2px 5px rgba(0,0,0,0.1)",
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
+                width: "45%",
               }}
             >
               <Typography variant="subtitle1" fontWeight="bold" color="primary">
@@ -363,4 +490,5 @@ function AdminDashboard() {
   );
 }
 
-export default AdminDashboard;
+// Sử dụng memo để tránh re-render không cần thiết
+export default memo(AdminDashboard);

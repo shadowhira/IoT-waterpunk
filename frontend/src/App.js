@@ -16,14 +16,17 @@ const user = {
 };
 
 function App() {
+  // Khởi tạo WebSocket một lần duy nhất ở App.js
   useEffect(() => {
+    console.log('App.js: Khởi tạo WebSocket');
     if(!isWebSocketConnected()) {
       connectWebSocket();
     }
-    // Kết nối WebSocket
 
     // Dọn dẹp khi component unmount
     return () => {
+      // Không ngắt kết nối WebSocket khi App unmount
+      // để tránh mất kết nối khi chuyển trang
       // disconnectWebSocket();
     };
   }, []); // Chỉ chạy một lần khi component được mount

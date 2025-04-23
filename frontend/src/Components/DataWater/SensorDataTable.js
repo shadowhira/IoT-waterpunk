@@ -88,6 +88,13 @@ function SensorDataTable() {
         )
           return;
 
+        // Kiểm tra xem đã xử lý dữ liệu này chưa bằng cách sử dụng timestamp
+        // Nếu đã có dữ liệu với timestamp giống nhau, bỏ qua
+        if (realtimeData && newData.payload && newData.payload.timestamp === realtimeData.timestamp) {
+          console.log("Bỏ qua dữ liệu trùng lặp", newData.payload.timestamp);
+          return;
+        }
+
         // Parse new data
         let sensorData;
         if (typeof newData.data === 'string') {
@@ -104,12 +111,24 @@ function SensorDataTable() {
           sensorData.timestamp = new Date().toISOString();
         }
 
+        console.log("Đã nhận dữ liệu mới:", sensorData.timestamp);
+
         // Update real-time data
         setRealtimeData(sensorData);
 
         // If showing real-time data, add to the table
         if (showRealtime) {
           setData(prevData => {
+            // Kiểm tra xem dữ liệu đã tồn tại trong bảng chưa
+            const exists = prevData.some(item =>
+              item.timestamp === sensorData.timestamp
+            );
+
+            if (exists) {
+              console.log("Dữ liệu đã tồn tại trong bảng, không thêm lại");
+              return prevData;
+            }
+
             // Create a new array with the new data at the beginning
             const newData = [sensorData, ...prevData.slice(0, rowsPerPage - 1)];
             return newData;
@@ -120,16 +139,15 @@ function SensorDataTable() {
       }
     };
 
-    // Add WebSocket event listener
+    // Chỉ lắng nghe một topic để tránh trùng lặp
+    // Ưu tiên sử dụng topic "/sensor/data" vì đây là topic chính
     addTopicListener("/sensor/data", handleMqttData);
-    addTopicListener("sensor_data", handleMqttData);
 
     // Cleanup on component unmount
     return () => {
       removeTopicListener("/sensor/data", handleMqttData);
-      removeTopicListener("sensor_data", handleMqttData);
     };
-  }, [showRealtime, rowsPerPage]);
+  }, [showRealtime, rowsPerPage, realtimeData]);
 
   // Fetch data from API
   const fetchData = async () => {
@@ -150,7 +168,15 @@ function SensorDataTable() {
       if (pumpState !== 'all') params.append('pumpState', pumpState);
 
       // Fetch data from API
-      const response = await fetch(`/api/sensor-data?${params.toString()}`);
+      const apiUrl = `${window.location.protocol}//${window.location.hostname}:4000/api/v1/sensor-data?${params.toString()}`;
+      console.log('Fetching data from:', apiUrl);
+      const response = await fetch(apiUrl);
+
+      // Check if response is OK
+      if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}`);
+      }
+
       const result = await response.json();
 
       // Update state with fetched data
