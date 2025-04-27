@@ -39,9 +39,9 @@ function Footer() {
         Copyright © 2020 Công ty điện nước Văn Thành
       </Typography>
       <Typography variant="body2" sx={{ fontSize: { xs: '10px', sm: '12px', md: '14px' } }}>
-        Version: BCVT-2024.11.1.8 (updated 2024-11-20 17:41)
+        Version: BCVT-2025.4.28 (updated 2025-4-28 11:52)
       </Typography>
-      <Typography variant="body2" sx={{ fontSize: { xs: '10px', sm: '12px', md: '14px' } }}>Design by TUANVU</Typography>
+      {/* <Typography variant="body2" sx={{ fontSize: { xs: '10px', sm: '12px', md: '14px' } }}>Design by TUANVU</Typography> */}
     </Box>
   );
 }
