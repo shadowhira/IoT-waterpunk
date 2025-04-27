@@ -470,27 +470,61 @@ function handleMenuOption(option) {
   }
 }
 
-// Mô phỏng rò rỉ mực nước
+// Mô phỏng rò rỉ mực nước (Loại 1)
 function simulateWaterLevelLeak() {
-  // Tăng khoảng cách (giảm mực nước) để mô phỏng rò rỉ
+  // Kiểm tra điều kiện tiên quyết
+  if (systemState.pumpState === 1) {
+    console.log('\nKhông thể mô phỏng rò rỉ mực nước khi máy bơm đang BẬT!');
+    console.log('Vui lòng TẮT máy bơm trước (chọn tùy chọn 11)');
+    return;
+  }
+
+  if (systemState.leakDetected) {
+    console.log('\nĐã có cảnh báo rò rỉ! Hãy reset cảnh báo trước khi mô phỏng.');
+    return;
+  }
+
+  // Lưu trữ giá trị ban đầu
   const oldDistance = systemState.distance;
-  const distanceChange = systemConfig.leak_threshold * 2; // Tăng khoảng cách nhiều hơn ngưỡng
+  
+  // Tính toán sự thay đổi khoảng cách để vượt ngưỡng
+  const timeElapsed = 1; // Giả lập 1 phút trôi qua
+  const distanceChange = systemConfig.leak_threshold * 2 * timeElapsed; // Tăng gấp đôi ngưỡng
+  
+  // Cập nhật khoảng cách mới (tăng khoảng cách = giảm mực nước)
   systemState.distance += distanceChange;
+
+  // Đảm bảo không vượt quá chiều cao bể
+  if (systemState.distance > systemConfig.tank_height) {
+    systemState.distance = systemConfig.tank_height;
+  }
 
   // Cập nhật trạng thái rò rỉ
   systemState.leakDetected = 1;
   systemState.leakType = 1;
 
-  // Gửi cảnh báo ngay lập tức
+  // Tính toán tỷ lệ thay đổi (cm/phút)
+  const rateOfChange = distanceChange / timeElapsed;
+
+  // Gửi cảnh báo
   const alertMsg = {
     type: 'leak',
     source: 'water_level',
-    value: distanceChange
+    value: rateOfChange.toFixed(2)
   };
   client.publish(MQTT_TOPICS.leakAlert, JSON.stringify(alertMsg));
 
-  console.log(`\nMô phỏng rò rỉ mực nước: ${oldDistance} cm -> ${systemState.distance} cm`);
-  console.log('CẢNH BÁO: Phát hiện rò rỉ mực nước!');
+  // Hiển thị thông tin chi tiết
+  console.log('\nMô phỏng rò rỉ mực nước:');
+  console.log(`- Khoảng cách ban đầu: ${oldDistance.toFixed(2)} cm`);
+  console.log(`- Khoảng cách sau khi rò rỉ: ${systemState.distance.toFixed(2)} cm`);
+  console.log(`- Tốc độ thay đổi: ${rateOfChange.toFixed(2)} cm/phút`);
+  console.log(`- Ngưỡng phát hiện: ${systemConfig.leak_threshold} cm/phút`);
+  console.log('\nCẢNH BÁO: Phát hiện rò rỉ mực nước!');
+  console.log('- Loại rò rỉ: ' + getLeakTypeName(systemState.leakType));
+  
+  // Gửi lại dữ liệu cảm biến ngay lập tức để cập nhật giao diện
+  sendSensorData();
 }
 
 // Mô phỏng rò rỉ lưu lượng

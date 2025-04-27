@@ -3,7 +3,7 @@ const readline = require("readline");
 
 // ==== Cấu hình MQTT Broker ====
 const MQTT_CONFIG = {
-  server: "mqtt://192.168.0.108", // Địa chỉ MQTT Broker
+  server: "mqtt://172.20.10.2", // Địa chỉ MQTT Broker
   port: 2403, // Port MQTT Broker
   topics: {
     sensorData: "/sensor/data",
