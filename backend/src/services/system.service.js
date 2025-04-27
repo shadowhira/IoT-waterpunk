@@ -57,24 +57,46 @@ class systemService {
       // Cập nhật cấu hình trong database
       const config = await configService.updateConfig(configData, deviceId);
 
-      // Gửi cấu hình mới qua MQTT
-      global.client.publish(configTopic, JSON.stringify(config), function (err) {
-        if (err) {
-          console.error("Error publishing config:", err);
-        } else {
-          console.log(`Config published to topic: ${configTopic}`);
-        }
-      });
+      // Chuẩn bị dữ liệu để gửi qua MQTT
+      const mqttConfig = {
+        tank_height: config.tank_height,
+        max_temp: config.max_temp,
+        max_tds: config.max_tds,
+        leak_threshold: config.leak_threshold,
+        flow_threshold: config.flow_threshold,
+        alerts_enabled: config.alerts_enabled
+      };
+
+      // Gửi cấu hình mới qua MQTT để ESP32 cập nhật EEPROM
+      if (global.client && global.client.connected) {
+        console.log('Gửi cấu hình mới tới ESP32:', mqttConfig);
+        global.client.publish('/sensor/config', JSON.stringify(mqttConfig), { qos: 1 }, (err) => {
+          if (err) {
+            console.error("Lỗi khi gửi cấu hình qua MQTT:", err);
+          } else {
+            console.log("Đã gửi cấu hình thành công qua MQTT");
+          }
+        });
+      } else {
+        console.error("MQTT client không khả dụng hoặc chưa kết nối");
+      }
 
       return config;
     } catch (error) {
-      console.error("Error updating config:", error);
+      console.error("Lỗi khi cập nhật cấu hình:", error);
       throw error;
     }
   };
 
   static getConfig = async (deviceId = "default") => {
-    return await configService.getConfig(deviceId);
+    try {
+      const config = await configService.getConfig(deviceId);
+      console.log('Retrieved config:', config);
+      return config;
+    } catch (error) {
+      console.error('Error in system.service.getConfig:', error);
+      throw error;
+    }
   };
 
   static resetLeak = async () => {

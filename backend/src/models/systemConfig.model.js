@@ -28,14 +28,14 @@ const systemConfigSchema = new mongoose.Schema({
         default: 0.2,
         required: true
     },
-    pump_timeout: {
-        type: Number,
-        default: 300,
-        required: true
-    },
     device_id: {
         type: String,
         default: "default",
+        required: true
+    },
+    alerts_enabled: {
+        type: Boolean,
+        default: true,
         required: true
     }
 }, {

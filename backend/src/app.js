@@ -155,6 +155,24 @@ wss.on("connection", async (ws) => {
               }
             }));
           });
+      } else if (data.topic === 'get_config') {
+        const systemService = require('./services/system.service');
+        try {
+          const config = systemService.getConfig(data.payload.deviceId || 'default');
+          ws.send(JSON.stringify({
+            topic: 'config',
+            payload: config
+          }));
+        } catch (error) {
+          console.error('Error getting config:', error);
+          ws.send(JSON.stringify({
+            topic: 'error',
+            payload: {
+              message: 'Failed to get configuration',
+              error: error.message
+            }
+          }));
+        }
       } else {
         // Gửi phản hồi cho các tin nhắn khác
         ws.send(JSON.stringify({
