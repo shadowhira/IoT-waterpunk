@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, Button, Paper, Grid, Divider } from '@mui/material';
+import { Box, Typography, Button, Paper, Grid, Divider, Switch, FormControlLabel } from '@mui/material';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import InfoIcon from '@mui/icons-material/Info';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
@@ -7,6 +7,7 @@ import WaterDropIcon from '@mui/icons-material/WaterDrop';
 import OpacityIcon from '@mui/icons-material/Opacity';
 import TimerIcon from '@mui/icons-material/Timer';
 import WarningIcon from '@mui/icons-material/Warning';
+import NotificationsOffIcon from '@mui/icons-material/NotificationsOff';
 import { MARGIN_HEADING, THEME_COLOR_BACKGROUND, BORDER_RADIUS_MEDIUM } from '../../Assets/Constants/constants';
 import { addTopicListener, removeTopicListener, sendMessage, connectWebSocket, isWebSocketConnected } from '../../Socket/WebSocketService';
 import Heading from '../Heading/Heading';
@@ -19,8 +20,22 @@ const WarningComponent = () => {
         details: null
     });
     const [loading, setLoading] = useState(true);
+    const [config, setConfig] = useState({ alerts_enabled: true });
 
     useEffect(() => {
+        // Đăng ký lắng nghe cấu hình
+        const handleConfigUpdate = (data) => {
+            if (data.topic === 'config') {
+                setConfig(prevConfig => ({
+                    ...prevConfig,
+                    alerts_enabled: data.payload.alerts_enabled
+                }));
+                setLoading(false);
+            }
+        };
+
+        addTopicListener('config', handleConfigUpdate);
+        
         // Đăng ký lắng nghe cảnh báo rò rỉ
         const handleLeakUpdate = (data) => {
             if (data.topic === 'alert' || data.topic === 'leak') {
@@ -115,11 +130,19 @@ const WarningComponent = () => {
         }, 5000);
     };
 
-    if (loading) return (
-        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
-            <Typography>Đang tải dữ liệu...</Typography>
-        </Box>
-    );
+    // Nếu đang tải hoặc cảnh báo bị tắt, không hiển thị component
+    if (loading) {
+        return (
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+                <Typography>Đang tải dữ liệu...</Typography>
+            </Box>
+        );
+    }
+
+    // Không hiển thị component nếu cảnh báo bị tắt
+    if (!config.alerts_enabled) {
+        return null;
+    }
 
     // Xác định loại cảnh báo và thông tin hiển thị
     const getAlertInfo = () => {

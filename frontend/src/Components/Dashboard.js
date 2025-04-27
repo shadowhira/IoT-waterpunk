@@ -74,6 +74,7 @@ function Dashboard({ user, role }) {
                             <>
                                 <Route path="/" element={<AdminDashboard />} />
                                 <Route path="/welcome" element={<AdminDashboard />} />
+                                <Route path="/cau-hinh" element={<SystemConfig />} />
                             </>
                         ) : role === 'user' ? (
                             <>
@@ -91,7 +92,6 @@ function Dashboard({ user, role }) {
                         <Route path="/thong-ke/tien-nuoc" element={<WaterBillChart />} />
                         <Route path="/thong-ke/du-lieu-nuoc" element={<WaterDataChart />} />
                         <Route path="/xem-canh-bao" element={<WarningComponent />} />
-                        <Route path="/cau-hinh" element={<SystemConfig />} />
                     </Routes>
                 </Box>
                 <Footer />

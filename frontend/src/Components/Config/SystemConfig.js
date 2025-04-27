@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import {
   Box,
   Typography,
@@ -8,74 +9,114 @@ import {
   Grid,
   Snackbar,
   Alert,
-  Divider
+  Divider,
+  FormControlLabel,
+  Switch
 } from '@mui/material';
 import { MARGIN_HEADING, BORDER_RADIUS_MEDIUM, THEME_COLOR_BACKGROUND, THEME_COLOR_BORDER } from '../../Assets/Constants/constants';
 import { addTopicListener, removeTopicListener, sendMessage } from '../../Socket/WebSocketService';
 import Heading from '../Heading/Heading';
 
 const SystemConfig = () => {
-  // State cho cấu hình
-  const [config, setConfig] = useState({
-    tank_height: 15.0,
-    max_temp: 35.0,
-    max_tds: 500.0,
-    leak_threshold: 0.5,
-    flow_threshold: 0.2,
-    pump_timeout: 300
-  });
-
-  // State cho thông báo
+  const [config, setConfig] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [notification, setNotification] = useState({
     open: false,
     message: '',
-    severity: 'success'
+    severity: 'info'
   });
+  const [isSaving, setIsSaving] = useState(false);
 
-  // State cho trạng thái đang lưu
-  const [isSaving, setSaving] = useState(false);
-
-  // Xử lý khi nhận cấu hình từ server
   useEffect(() => {
-    const handleConfigUpdate = (data) => {
-      if (data.topic === 'config') {
-        setConfig(data.payload);
+    const fetchConfig = async () => {
+      try {
+        console.log('Đang lấy cấu hình...');
+        const response = await axios.get(`${process.env.REACT_APP_API_URL}/config`);
+        console.log('Phản hồi từ API:', response.data);
+        
+        if (response.data && response.data.metadata) {
+          setConfig(response.data.metadata);
+        } else {
+          throw new Error('Dữ liệu cấu hình không hợp lệ');
+        }
+      } catch (error) {
+        console.error('Lỗi khi lấy cấu hình:', error);
+        setNotification({
+          open: true,
+          message: `Lỗi khi tải cấu hình: ${error.message}`,
+          severity: 'error'
+        });
+      } finally {
+        setLoading(false);
       }
     };
 
-    // Đăng ký lắng nghe cấu hình
-    addTopicListener('config', handleConfigUpdate);
-
-    // Hủy đăng ký khi component unmount
-    return () => {
-      removeTopicListener('config', handleConfigUpdate);
-    };
+    fetchConfig();
   }, []);
 
-  // Xử lý thay đổi giá trị input
+  // Xử lý thay đổi giá trị input số
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setConfig({
-      ...config,
-      [name]: parseFloat(value)
+    const newValue = parseFloat(value);
+    
+    setConfig(prevConfig => {
+      const updatedConfig = {
+        ...prevConfig,
+        [name]: newValue
+      };
+      
+      // Gửi cập nhật ngay lập tức qua WebSocket
+      sendMessage('config', {
+        [name]: newValue
+      });
+      
+      return updatedConfig;
     });
   };
 
-  // Xử lý lưu cấu hình
-  const handleSave = () => {
-    setSaving(true);
-
-    // Gửi cấu hình mới đến server
-    sendMessage('config', config);
-
-    // Hiển thị thông báo thành công
-    setNotification({
-      open: true,
-      message: 'Cấu hình đã được lưu thành công!',
-      severity: 'success'
+  // Xử lý thay đổi switch (alerts_enabled)
+  const handleSwitchChange = (e) => {
+    const { name, checked } = e.target;
+    
+    setConfig(prevConfig => {
+      const updatedConfig = {
+        ...prevConfig,
+        [name]: checked
+      };
+      
+      // Gửi cập nhật ngay lập tức qua WebSocket
+      sendMessage('config', {
+        [name]: checked
+      });
+      
+      return updatedConfig;
     });
+  };
 
-    setSaving(false);
+  // Xử lý lưu toàn bộ cấu hình
+  const handleSaveConfig = async () => {
+    try {
+      setIsSaving(true);
+      console.log('Đang lưu cấu hình:', config);
+      const response = await axios.put(`${process.env.REACT_APP_API_URL}/config`, config);
+      
+      if (response.data && response.data.status === 'success') {
+        setNotification({
+          open: true,
+          message: 'Đã lưu cấu hình thành công',
+          severity: 'success'
+        });
+      }
+    } catch (error) {
+      console.error('Lỗi khi lưu cấu hình:', error);
+      setNotification({
+        open: true,
+        message: `Lỗi khi lưu cấu hình: ${error.message}`,
+        severity: 'error'
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // Xử lý đóng thông báo
@@ -85,6 +126,14 @@ const SystemConfig = () => {
       open: false
     });
   };
+
+  if (loading) {
+    return <div>Đang tải cấu hình...</div>;
+  }
+
+  if (!config) {
+    return <div>Không thể tải cấu hình</div>;
+  }
 
   return (
     <Box sx={{
@@ -110,6 +159,28 @@ const SystemConfig = () => {
         </Typography>
 
         <Grid container spacing={3}>
+          {/* Cấu hình cảnh báo */}
+          <Grid item xs={12}>
+            <Typography variant="h6" gutterBottom>
+              Cấu hình cảnh báo
+            </Typography>
+            <Divider sx={{ marginBottom: 2 }} />
+          </Grid>
+
+          <Grid item xs={12}>
+            <FormControlLabel
+              control={
+                <Switch
+                  name="alerts_enabled"
+                  checked={config.alerts_enabled}
+                  onChange={handleSwitchChange}
+                  color="primary"
+                />
+              }
+              label="Kích hoạt cảnh báo"
+            />
+          </Grid>
+
           {/* Cấu hình bể nước */}
           <Grid item xs={12}>
             <Typography variant="h6" gutterBottom>
@@ -199,25 +270,12 @@ const SystemConfig = () => {
             />
           </Grid>
 
-          <Grid item xs={12} md={6}>
-            <TextField
-              fullWidth
-              label="Thời gian bơm tối đa (giây)"
-              name="pump_timeout"
-              type="number"
-              value={config.pump_timeout}
-              onChange={handleChange}
-              inputProps={{ step: 10 }}
-              helperText="Thời gian tối đa cho phép bơm liên tục"
-            />
-          </Grid>
-
           {/* Nút lưu cấu hình */}
           <Grid item xs={12} sx={{ marginTop: 2, textAlign: 'center' }}>
             <Button
               variant="contained"
               color="primary"
-              onClick={handleSave}
+              onClick={handleSaveConfig}
               disabled={isSaving}
               sx={{
                 minWidth: 150,
@@ -227,7 +285,7 @@ const SystemConfig = () => {
                 }
               }}
             >
-              {isSaving ? 'Đang lưu...' : 'Lưu cấu hình'}
+              {false ? 'Đang lưu...' : 'Lưu cấu hình'}
             </Button>
           </Grid>
         </Grid>

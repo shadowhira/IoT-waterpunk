@@ -65,7 +65,7 @@ function AdminDashboard() {
   // Hàm xử lý reset leak
   const handleResetLeak = () => {
     console.log('Gửi lệnh reset leak');
-    fetch('http://localhost:4000/api/v1/system/reset-leak', {
+    fetch('http://localhost:4000/api/v1/config/reset-leak', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -85,6 +85,8 @@ function AdminDashboard() {
       console.error('Lỗi khi reset leak:', error);
     });
   };
+
+  const [config, setConfig] = useState({ alerts_enabled: true });
 
   useEffect(() => {
     // Chỉ khởi tạo giá trị mặc định nếu component chưa được mount
@@ -117,25 +119,29 @@ function AdminDashboard() {
     const handleMqttData = (newData) => {
       console.log('Nhận dữ liệu mới:', newData);
       try {
-        // Xử lý dữ liệu cảm biến
         let sensorData;
-
-        // Kiểm tra cấu trúc dữ liệu và lấy dữ liệu cảm biến
+        
+        // Lấy dữ liệu từ payload của WebSocketServer
         if (newData.payload) {
-          // Dữ liệu từ backend qua WebSocket
           sensorData = newData.payload;
-          console.log('Dữ liệu từ payload:', sensorData);
-        } else if (typeof newData.data === 'string') {
-          // Dữ liệu dạng chuỗi JSON
-          sensorData = JSON.parse(newData.data);
-          console.log('Dữ liệu từ data string:', sensorData);
-        } else if (newData.data) {
-          // Dữ liệu đã là object
-          sensorData = newData.data;
-          console.log('Dữ liệu từ data object:', sensorData);
+          console.log('Dữ liệu cảm biến từ payload:', sensorData);
         } else {
           console.error("Invalid sensor data format", newData);
           return;
+        }
+
+        // Cập nhật trạng thái rò rỉ từ dữ liệu WebSocketServer
+        if ('leakDetected' in sensorData && 'leakType' in sensorData) {
+          console.log('Cập nhật trạng thái rò rỉ:', {
+            detected: sensorData.leakDetected,
+            type: sensorData.leakType
+          });
+          
+          setLeakAlert({
+            detected: Boolean(sensorData.leakDetected),
+            type: Number(sensorData.leakType),
+            timestamp: sensorData.leakDetected ? new Date().toISOString() : null
+          });
         }
 
         // Bỏ qua các lệnh điều khiển
@@ -209,78 +215,15 @@ function AdminDashboard() {
       }
     };
 
-    // Không cần kiểm tra và kết nối WebSocket ở đây vì đã kết nối ở App.js
-    console.log('AdminDashboard: Sử dụng WebSocket đã được kết nối ở App.js');
-    // Không gọi connectWebSocket() ở đây nữa
-
-    // Hàm xử lý cảnh báo rò rỉ
-    const handleLeakAlert = (data) => {
-      console.log('Nhận cảnh báo rò rỉ:', data);
-      try {
-        if (data.payload) {
-          console.log('Cập nhật trạng thái cảnh báo rò rỉ:', data.payload);
-          setLeakAlert({
-            detected: data.payload.detected,
-            type: data.payload.type,
-            timestamp: data.payload.timestamp
-          });
-        }
-      } catch (error) {
-        console.error('Lỗi khi xử lý cảnh báo rò rỉ:', error);
-      }
-    };
-
-    // Hàm xử lý cảnh báo chung
-    const handleAlert = (data) => {
-      console.log('Nhận cảnh báo:', data);
-      try {
-        if (data.payload && data.payload.leak_type > 0) {
-          console.log('Cập nhật cảnh báo rò rỉ từ topic alert:', data.payload);
-          setLeakAlert({
-            detected: true,
-            type: data.payload.leak_type,
-            timestamp: data.payload.timestamp
-          });
-        }
-      } catch (error) {
-        console.error('Lỗi khi xử lý cảnh báo:', error);
-      }
-    };
-
-    // Hàm xử lý cảnh báo đã giải quyết
-    const handleAlertResolved = (data) => {
-      console.log('Nhận thông báo cảnh báo đã giải quyết:', data);
-      try {
-        if (data.payload && data.payload.leak_type > 0) {
-          console.log('Cập nhật trạng thái cảnh báo rò rỉ đã giải quyết');
-          setLeakAlert({
-            detected: false,
-            type: 0,
-            timestamp: null
-          });
-        }
-      } catch (error) {
-        console.error('Lỗi khi xử lý cảnh báo đã giải quyết:', error);
-      }
-    };
-
-    // Add WebSocket event listeners - lắng nghe cả hai topic dữ liệu và các topic cảnh báo
-    addTopicListener("/sensor/data", handleMqttData);
+    // Chỉ đăng ký listener cho topic sensor_data
     addTopicListener("sensor_data", handleMqttData);
-    addTopicListener("leak", handleLeakAlert);
-    addTopicListener("alert", handleAlert);
-    addTopicListener("alert_resolved", handleAlertResolved);
-
-    // Cleanup on component unmount
+    
     return () => {
-      console.log("Component unmounted. Gỡ bỏ các listener và ngắt kết nối...");
-      removeTopicListener("/sensor/data", handleMqttData);
       removeTopicListener("sensor_data", handleMqttData);
-      removeTopicListener("leak", handleLeakAlert);
-      removeTopicListener("alert", handleAlert);
-      removeTopicListener("alert_resolved", handleAlertResolved);
     };
   }, []); // Empty dependency array ensures this runs once on mount
+  console.log('Leak: ', leakAlert);
+  
 
   return (
     <Box
@@ -312,7 +255,8 @@ function AdminDashboard() {
         }}
       >
         {/* Phần cảnh báo rò rỉ */}
-        <Paper
+        {config.alerts_enabled && (
+          <Paper
           elevation={3}
           sx={{
             width: "100%",
@@ -355,6 +299,7 @@ function AdminDashboard() {
             </Alert>
           )}
         </Paper>
+        )}
 
         {/* Phần điều khiển máy bơm */}
         <Paper
