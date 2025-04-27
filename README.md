@@ -161,7 +161,6 @@ Truy cập trang "Cấu hình hệ thống" từ menu để điều chỉnh các
 - **TDS tối đa**: Ngưỡng độ đục an toàn (ppm)
 - **Ngưỡng rò rỉ mực nước**: Tốc độ giảm mực nước bất thường (cm/phút)
 - **Ngưỡng rò rỉ lưu lượng**: Lưu lượng bất thường khi không bơm (L/phút)
-- **Thời gian bơm tối đa**: Thời gian tối đa cho phép bơm liên tục (giây)
 
 ### 3. Xem cảnh báo
 
