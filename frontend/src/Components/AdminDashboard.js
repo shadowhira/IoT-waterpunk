@@ -88,141 +88,36 @@ function AdminDashboard() {
 
   const [config, setConfig] = useState({ alerts_enabled: true });
 
+  // Thêm useEffect để fetch config
   useEffect(() => {
-    // Chỉ khởi tạo giá trị mặc định nếu component chưa được mount
-    if (!isMounted.current) {
-      // Đánh dấu component đã được mount
-      isMounted.current = true;
-
-      // Khởi tạo giá trị mặc định cho waterLevelInfo
-      setWaterLevelInfo({
-        distance: 5,
-        tankHeight: 15,
-        percentage: 66.7
-      });
-
-      // Khởi tạo giá trị mặc định cho ratio
-      setRatio(0.667);
-
-      // Khởi tạo giá trị mặc định cho sensorData
-      setSensorData({
-        temperature: 25,
-        tds: 300,
-        flowRate: 0,
-        pumpState: 0
-      });
-
-      console.log('AdminDashboard mounted - đã khởi tạo giá trị mặc định');
-    }
-
-    // WebSocket data handler
-    const handleMqttData = (newData) => {
-      console.log('Nhận dữ liệu mới:', newData);
+    const fetchConfig = async () => {
       try {
-        let sensorData;
-        
-        // Lấy dữ liệu từ payload của WebSocketServer
-        if (newData.payload) {
-          sensorData = newData.payload;
-          console.log('Dữ liệu cảm biến từ payload:', sensorData);
-        } else {
-          console.error("Invalid sensor data format", newData);
-          return;
+        const response = await fetch('http://localhost:4000/api/v1/config');
+        const data = await response.json();
+        if (data.metadata) {
+          setConfig(data.metadata);
+          console.log('Loaded config from DB:', data.metadata);
         }
-
-        // Cập nhật trạng thái rò rỉ từ dữ liệu WebSocketServer
-        if ('leakDetected' in sensorData && 'leakType' in sensorData) {
-          console.log('Cập nhật trạng thái rò rỉ:', {
-            detected: sensorData.leakDetected,
-            type: sensorData.leakType
-          });
-          
-          setLeakAlert({
-            detected: Boolean(sensorData.leakDetected),
-            type: Number(sensorData.leakType),
-            timestamp: sensorData.leakDetected ? new Date().toISOString() : null
-          });
-        }
-
-        // Bỏ qua các lệnh điều khiển
-        if (
-          sensorData === "off" ||
-          sensorData === "on" ||
-          sensorData === "auto"
-        ) {
-          console.log('Bỏ qua lệnh điều khiển:', sensorData);
-          return;
-        }
-
-        // Lấy thông tin khoảng cách và chiều cao bể
-        const distance = parseFloat(sensorData.distance) || 0;
-        const tankHeight = parseFloat(sensorData.tankHeight) || 15; // Mặc định 15cm nếu không có dữ liệu
-
-        console.log('Khoảng cách:', distance, 'Chiều cao bể:', tankHeight);
-
-        // Tính toán tỷ lệ mực nước
-        let waterRatio;
-        let percentage;
-
-        if (sensorData.currentLevelPercent !== undefined) {
-          // Nếu dữ liệu đã có currentLevelPercent (từ simulator)
-          percentage = parseFloat(sensorData.currentLevelPercent);
-          waterRatio = percentage / 100;
-          console.log('Sử dụng currentLevelPercent:', percentage);
-        } else if (distance !== undefined) {
-          // Nếu chỉ có khoảng cách (từ ESP32 thực)
-          percentage = Math.round(((tankHeight - distance) / tankHeight) * 100 * 10) / 10;
-          waterRatio = percentage / 100;
-          console.log('Tính toán từ khoảng cách:', percentage);
-        } else {
-          console.error("Missing water level data");
-          return;
-        }
-
-        // Đảm bảo tỷ lệ nằm trong khoảng [0, 1]
-        waterRatio = Math.min(Math.max(waterRatio, 0), 1);
-        percentage = Math.min(Math.max(percentage, 0), 100);
-
-        console.log('Tỷ lệ cuối cùng:', waterRatio, 'Phần trăm:', percentage);
-
-        // Cập nhật thông tin mực nước
-        const newWaterLevelInfo = {
-          distance: distance,
-          tankHeight: tankHeight,
-          percentage: percentage
-        };
-
-        setWaterLevelInfo(newWaterLevelInfo);
-        console.log('Đã cập nhật WaterLevelInfo:', newWaterLevelInfo);
-
-        // Cập nhật dữ liệu cảm biến
-        const newSensorData = {
-          temperature: parseFloat(sensorData.temperature) || 0,
-          tds: parseFloat(sensorData.tds) || 0,
-          flowRate: parseFloat(sensorData.flowRate) || 0,
-          pumpState: parseInt(sensorData.pumpState) || 0
-        };
-
-        setSensorData(newSensorData);
-        console.log('Đã cập nhật SensorData:', newSensorData);
-
-        // Cập nhật tỷ lệ cho hiển thị bể nước
-        setRatio(waterRatio);
-        console.log(`Cập nhật mực nước: ${percentage.toFixed(1)}% (Khoảng cách: ${distance.toFixed(1)}cm)`);
-        console.log(`Nhiệt độ: ${sensorData.temperature}°C | TDS: ${sensorData.tds} ppm | Lưu lượng: ${sensorData.flowRate} L/phút`);
       } catch (error) {
-        console.error("Error processing sensor data:", error);
+        console.error('Error fetching config:', error);
       }
     };
 
-    // Chỉ đăng ký listener cho topic sensor_data
-    addTopicListener("sensor_data", handleMqttData);
-    
+    fetchConfig();
+
+    // Đăng ký lắng nghe cập nhật config từ WebSocket
+    addTopicListener("config", (data) => {
+      if (data.payload) {
+        setConfig(data.payload);
+        console.log('Config updated from WebSocket:', data.payload);
+      }
+    });
+
     return () => {
-      removeTopicListener("sensor_data", handleMqttData);
+      removeTopicListener("config");
     };
   }, []); // Empty dependency array ensures this runs once on mount
-  console.log('Leak: ', leakAlert);
+  console.log('Leak: ', config.alerts_enabled);
   
 
   return (

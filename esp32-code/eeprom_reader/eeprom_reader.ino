@@ -63,31 +63,54 @@ byte calculateStateChecksum(SystemState* state) {
 void hexDump(const char* desc, const void* addr, uint32_t len) {
   uint8_t* data = (uint8_t*)addr;
   Serial.print(desc); Serial.print(":");
+
+  // In header cho cột số
+  Serial.print("\n     ");
+  for (int i = 0; i < 16; i++) {
+    Serial.printf(" %2X", i);
+  }
+  Serial.print(" | Text\n-----");
+  for (int i = 0; i < 16; i++) {
+    Serial.print("---");
+  }
+  Serial.println("---------");
+
+  // In dữ liệu
   for (uint32_t i = 0; i < len; i++) {
     if (i % 16 == 0) {
-      Serial.printf("\n%04X: ", i);
+      Serial.printf("\n%04X:", i);
     }
-    Serial.printf("%02X ", data[i]);
+
+    Serial.printf(" %02X", data[i]);
+
+    // In phần text khi đến cuối dòng hoặc cuối dữ liệu
     if ((i + 1) % 16 == 0 || i == len - 1) {
-      // In các ký tự ASCII
-      uint8_t j;
+      // Căn chỉnh cho dòng cuối
       if ((i + 1) % 16 != 0) {
-        // Căn chỉnh cho dòng cuối
-        j = 16 - ((i + 1) % 16);
-        for (; j > 0; j--) {
+        for (uint8_t j = 0; j < (16 - ((i + 1) % 16)); j++) {
           Serial.print("   ");
         }
       }
+
       Serial.print(" | ");
-      // Bắt đầu từ dòng hiện tại
-      j = i - (i % 16);
-      // Đến cuối dòng hoặc cuối dữ liệu
-      for (; j <= i; j++) {
-        if (data[j] >= 32 && data[j] <= 126) {
-          Serial.print((char)data[j]);
-        } else {
-          Serial.print(".");
+
+      // In các ký tự ASCII hoặc giá trị dễ đọc
+      for (uint8_t j = i - (i % 16); j <= i; j++) {
+        switch(data[j]) {
+          case 0x00:
+            Serial.print("NULL");
+            break;
+          case 0xFF:
+            Serial.print("---");
+            break;
+          default:
+            if (data[j] >= 32 && data[j] <= 126) {
+              Serial.print((char)data[j]);
+            } else {
+              Serial.printf("%03d", data[j]); // In giá trị số
+            }
         }
+        Serial.print(" ");
       }
       Serial.println();
     }

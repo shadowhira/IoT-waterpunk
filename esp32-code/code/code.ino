@@ -390,6 +390,10 @@ void callback(char* topic, byte* payload, unsigned int length) {
         configChanged = true;
         changedParams += "- Trạng thái cảnh báo: " + String(newValue ? "Bật" : "Tắt") + "\n";
       }
+      if(ALERTS_ENABLED == false){
+        leakDetected = false;
+        leakType = 0;
+      }
     }
 
     // Nếu có thay đổi, lưu vào EEPROM và gửi xác nhận
@@ -499,13 +503,13 @@ void handleSensorLogic() {
   if (currentLevelPercent > 100) currentLevelPercent = 100;
 
   // In ra Serial để debug
-  Serial.println("Thông số cảm biến:");
-  Serial.print("Nhiệt độ: "); Serial.print(temperatureC); Serial.println(" *C");
-  Serial.print("TDS: "); Serial.print(tdsValue); Serial.println(" ppm");
-  Serial.print("Lưu lượng: "); Serial.print(flowRate); Serial.println(" L/phút");
-  Serial.print("Khoảng cách: "); Serial.print(distance); Serial.println(" cm");
-  Serial.print("Mực nước: "); Serial.print(currentLevelPercent); Serial.println(" %");
-  Serial.print("Máy bơm: "); Serial.println(pumpState ? "BẬT" : "TẮT");
+  // Serial.println("Thông số cảm biến:");
+  // Serial.print("Nhiệt độ: "); Serial.print(temperatureC); Serial.println(" *C");
+  // Serial.print("TDS: "); Serial.print(tdsValue); Serial.println(" ppm");
+  // Serial.print("Lưu lượng: "); Serial.print(flowRate); Serial.println(" L/phút");
+  // Serial.print("Khoảng cách: "); Serial.print(distance); Serial.println(" cm");
+  // Serial.print("Mực nước: "); Serial.print(currentLevelPercent); Serial.println(" %");
+  // Serial.print("Máy bơm: "); Serial.println(pumpState ? "BẬT" : "TẮT");
   
 
 
@@ -1009,5 +1013,5 @@ void loop() {
     lastLCDTime = millis();
     updateLCD();
   }
-  Serial.println(leakType)
+  //Serial.println(leakType);
 }

@@ -9,8 +9,17 @@ const checkThresholds = async (data) => {
   // Lấy cấu hình hiện tại
   const config = await configService.getConfig();
 
-  // Nếu cảnh báo bị tắt, không thực hiện kiểm tra
+  // Nếu cảnh báo bị tắt, reset trạng thái cảnh báo
   if (!config.alerts_enabled) {
+    if (global.leakDetected) {
+      global.leakDetected = false;
+      // Gửi thông báo reset cảnh báo
+      global.client.publish('/sensor/leak', JSON.stringify({
+        detected: false,
+        type: 0,
+        timestamp: new Date().toISOString()
+      }));
+    }
     return;
   }
 
